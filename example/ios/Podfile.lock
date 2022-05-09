@@ -1,0 +1,22 @@
+PODS:
+  - Flutter (1.0.0)
+  - starxpand (0.0.1):
+    - Flutter
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - starxpand (from `.symlinks/plugins/starxpand/ios`)
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  starxpand:
+    :path: ".symlinks/plugins/starxpand/ios"
+
+SPEC CHECKSUMS:
+  Flutter: 50d75fe2f02b26cc09d224853bb45737f8b3214a
+  starxpand: 055bc11f7444ec887065124b5a753e105a73ff28
+
+PODFILE CHECKSUM: 4e8f8b2be68aeea4c0d5beb6ff1e79fface1d048
+
+COCOAPODS: 1.11.3
