@@ -29,6 +29,6 @@ flutter:
     platforms:
       android:
         package: com.ovatu.starxpand
-        pluginClass: StarXpandPlugin
+        pluginClass: StarxpandPlugin
       ios:
-        pluginClass: StarXpandPlugin
+        pluginClass: StarxpandPlugin
