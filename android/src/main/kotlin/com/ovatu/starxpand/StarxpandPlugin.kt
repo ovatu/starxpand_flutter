@@ -22,8 +22,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
-/** StarXpandPlugin */
-class StarXpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
+/** StarxpandPlugin */
+class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   private val tag = "StarXpandPlugin"
 
   /// The MethodChannel that will the communication between Flutter and native Android
