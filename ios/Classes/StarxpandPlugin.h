@@ -1,4 +1,4 @@
 #import <Flutter/Flutter.h>
 
-@interface StarXpandPlugin : NSObject<FlutterPlugin>
+@interface StarxpandPlugin : NSObject<FlutterPlugin>
 @end

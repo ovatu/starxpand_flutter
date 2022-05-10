@@ -2,7 +2,7 @@ import Flutter
 import UIKit
 import StarIO10
 
-public class SwiftStarXpandPlugin: NSObject, FlutterPlugin, StarDeviceDiscoveryManagerDelegate {
+public class SwiftStarxpandPlugin: NSObject, FlutterPlugin, StarDeviceDiscoveryManagerDelegate {
     var manager: StarDeviceDiscoveryManager? = nil
     var result: FlutterResult? = nil
     
@@ -10,7 +10,7 @@ public class SwiftStarXpandPlugin: NSObject, FlutterPlugin, StarDeviceDiscoveryM
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "starxpand", binaryMessenger: registrar.messenger())
-        let instance = SwiftStarXpandPlugin()
+        let instance = SwiftStarxpandPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
     }
 
