@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <usb-device class="255" subclass="66" protocol="1" />
+    <usb-device vendor-id="1305" product-id="0003" />   <!--TSP100IIU+/IIIU/IV  - printerClass-->
+    <usb-device vendor-id="1305" product-id="0071" />   <!--mC-Print3           - printerClass-->
+    <usb-device vendor-id="1305" product-id="0073" />   <!--mC-Print2           - printerClass-->
+    <usb-device vendor-id="1305" product-id="0023" />   <!--mPOP                - printerClass-->
+</resources>

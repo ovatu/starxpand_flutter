@@ -1,4 +1,4 @@
-#import "StarxpandPlugin.h"
+#import "StarXpandPlugin.h"
 #if __has_include(<starxpand/starxpand-Swift.h>)
 #import <starxpand/starxpand-Swift.h>
 #else
@@ -8,8 +8,8 @@
 #import "starxpand-Swift.h"
 #endif
 
-@implementation StarxpandPlugin
+@implementation StarXpandPlugin
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
-  [SwiftStarxpandPlugin registerWithRegistrar:registrar];
+  [SwiftStarXpandPlugin registerWithRegistrar:registrar];
 }
 @end
