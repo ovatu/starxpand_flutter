@@ -1,6 +1,7 @@
 package com.ovatu.starxpand
 
 import android.app.Activity
+import android.content.Context
 import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.annotation.NonNull
@@ -13,10 +14,13 @@ import com.starmicronics.stario10.starxpandcommand.printer.*
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+import io.flutter.plugin.common.MessageCodec
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import io.flutter.plugin.platform.PlatformView
+import io.flutter.plugin.platform.PlatformViewFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -24,7 +28,7 @@ import kotlinx.coroutines.launch
 
 /** StarxpandPlugin */
 class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
-  private val tag = "StarXpandPlugin"
+  private val tag = "StarxpandPlugin"
 
   /// The MethodChannel that will the communication between Flutter and native Android
   ///
@@ -66,7 +70,7 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     Log.d(tag, "onMethodCall: ${call.method} - ${call.arguments}")
 
     when (call.method) {
-      "findPrinters" -> findPrinters((call.arguments as Map<*, *>)["callback"] as String?, result)
+      "findPrinters" -> findPrinters(call.arguments as Map<*, *>, result)
       "printDocument" -> printDocument(call.arguments as Map<*, *>, result)
       "startInputListener" -> startInputListener(call.arguments as Map<*, *>, result)
       "stopInputListener" -> stopInputListener(call.arguments as Map<*, *>, result)
@@ -85,7 +89,7 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     return _printers[connection.toString()]!!
   }
 
-  fun sendCallback(guid: String, type: String, payload: Map<*, *>) {
+  private fun sendCallback(guid: String, type: String, payload: Map<*, *>) {
     Log.d(tag, "sendCallback: $guid - $payload")
 
     activity.runOnUiThread {
@@ -99,29 +103,34 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     }
   }
 
-  private fun findPrinters(callbackGuid: String?, result: Result) {
+  private fun findPrinters(@NonNull args: Map<*, *>, result: Result) {
+    val callbackGuid = args["callback"] as String?
+    val timeout = args["timeout"] as Int
+    val interfaces = args["interfaces"] as List<*>
+
     try {
       val foundPrinters: MutableList<StarPrinter> = mutableListOf()
 
       // Specify your printer interface types.
-      val interfaceTypes: List<InterfaceType> = listOf(
-              InterfaceType.Lan,
-              InterfaceType.Bluetooth,
-              InterfaceType.Usb
-      )
+      val interfaceTypes: List<InterfaceType> = (interfaces.map {
+        when (it as String?) {
+          "lan" -> InterfaceType.Lan
+          "bluetooth" -> InterfaceType.Bluetooth
+          "bluetoothLE" -> InterfaceType.Bluetooth
+          "usb" -> InterfaceType.Usb
+          else -> InterfaceType.Unknown
+        }
+      }).toList()
 
       _manager = StarDeviceDiscoveryManagerFactory.create(
               interfaceTypes,
               activity
       )
 
-      // Set discovery time. (option)
-      _manager?.discoveryTime = 3000
-
+      _manager?.discoveryTime = timeout
       _manager?.callback = object : StarDeviceDiscoveryManager.Callback {
         // Callback for printer found.
         override fun onPrinterFound(printer: StarPrinter) {
-          Log.d("Discovery", "Found printer: ${printer.connectionSettings.identifier}.")
           foundPrinters.add(printer)
           if (callbackGuid != null) {
             sendCallback(callbackGuid, "printerFound", mutableMapOf(
@@ -134,8 +143,6 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
         // Callback for discovery finished. (option)
         override fun onDiscoveryFinished() {
-          Log.d("Discovery", "Discovery finished.")
-
           result.success(mutableMapOf(
                   "printers" to foundPrinters.map {
                     mutableMapOf(
@@ -148,11 +155,7 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         }
       }
 
-      // Start discovery.
       _manager?.startDiscovery()
-
-      // Stop discovery.
-      //_manager?.stopDiscovery()
     } catch (e: Exception) {
       // Exception.
       Log.d("Discovery", "${e.message}")
@@ -302,7 +305,7 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         }
         "style" -> {
           if (action["alignment"] != null) {
-            printerBuilder.styleAlignment(when (data["alignment"]) {
+            printerBuilder.styleAlignment(when (action["alignment"]) {
               "left" -> Alignment.Left
               "center" -> Alignment.Center
               "right" -> Alignment.Right
@@ -311,7 +314,7 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           }
 
           if (action["fontType"] != null) {
-            printerBuilder.styleFont(when (data["fontType"]) {
+            printerBuilder.styleFont(when (action["fontType"]) {
               "a" -> FontType.A
               "b" -> FontType.B
               else -> FontType.A
@@ -357,7 +360,7 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           }
 
           if (action["internationalCharacter"] != null) {
-            printerBuilder.styleInternationalCharacter(when (data["internationalCharacter"]) {
+            printerBuilder.styleInternationalCharacter(when (action["internationalCharacter"]) {
               "usa" -> InternationalCharacterType.Usa
               "france" -> InternationalCharacterType.France
               "germany" -> InternationalCharacterType.Germany
@@ -407,7 +410,7 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           }
         }
         "cut" -> {
-          val cutType = when (data["type"]) {
+          val cutType = when (action["type"]) {
             "full" -> CutType.Full
             "partial" -> CutType.Partial
             "fullDirect" -> CutType.FullDirect

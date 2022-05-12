@@ -4,7 +4,6 @@ import 'dart:async';
 import 'package:http/http.dart' as http;
 
 import 'package:flutter/services.dart';
-import 'package:starxpand/models/starxpand_printer.dart';
 import 'package:starxpand/starxpand.dart';
 
 void main() {
@@ -28,7 +27,7 @@ class _MyAppState extends State<MyApp> {
 
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> _find() async {
-    var ps = await StarXpand.find(
+    var ps = await StarXpand.findPrinters(
         callback: (payload) => print('lib main: $payload'));
     setState(() {
       printers = ps;
@@ -147,7 +146,7 @@ Visa XXXX-XXXX-XXXX-0123
           if (printers != null)
             for (var p in printers!)
               ListTile(
-                  onTap: () => _startInputListener(p),
+                  onTap: () => _print(p),
                   title: Text(p.model),
                   subtitle: Text(p.identifier),
                   trailing: Text(p.interface.name))
