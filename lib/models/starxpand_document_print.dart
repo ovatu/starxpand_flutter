@@ -121,7 +121,7 @@ class StarXpandDocumentPrint extends StarXpandDocumentContent {
       'internationalCharacter': internationalCharacter?.name,
       'secondPriorityCharacterEncoding': secondPriorityCharacterEncoding?.name,
       'cjkCharacterPriority': cjkCharacterPriority?.map((e) => e.name).toList()
-    });
+    }..trim());
   }
 
   add(StarXpandDocumentPrint print) {
@@ -162,7 +162,7 @@ class StarXpandDocumentPrint extends StarXpandDocumentContent {
       'barDots': barDots,
       'barRatioLevel': barRatioLevel?.name,
       'height': height
-    });
+    }..trim());
   }
 
   actionPrintPdf417(String content,
@@ -178,7 +178,7 @@ class StarXpandDocumentPrint extends StarXpandDocumentContent {
       'module': module,
       'aspect': aspect,
       'level': level?.name
-    });
+    }..trim());
   }
 
   actionPrintQRCode(String content,
@@ -191,7 +191,7 @@ class StarXpandDocumentPrint extends StarXpandDocumentContent {
       'model': model?.name,
       'level': level?.name,
       'cellSize': cellSize
-    });
+    }..trim());
   }
 
   actionPrintImage(Uint8List image, int width) {
@@ -201,5 +201,11 @@ class StarXpandDocumentPrint extends StarXpandDocumentContent {
   @override
   Map getData() {
     return {"actions": _actions};
+  }
+}
+
+extension MapTrim on Map {
+  trim() {
+    removeWhere((key, value) => value == null);
   }
 }

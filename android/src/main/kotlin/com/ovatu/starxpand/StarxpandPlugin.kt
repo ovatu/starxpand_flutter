@@ -2,7 +2,6 @@ package com.ovatu.starxpand
 
 import android.app.Activity
 import android.graphics.BitmapFactory
-import android.graphics.fonts.Font
 import android.util.Log
 import androidx.annotation.NonNull
 import com.starmicronics.stario10.*
@@ -22,7 +21,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import java.lang.StringBuilder
 
 /** StarxpandPlugin */
 class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
@@ -35,10 +33,8 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   private lateinit var channel: MethodChannel
   private lateinit var activity: Activity
 
-  var _manager: StarDeviceDiscoveryManager? = null
-  var _result: Result? = null
-
-  var _foundPrinters: MutableList<StarPrinter> = mutableListOf()
+  private var _manager: StarDeviceDiscoveryManager? = null
+  private var _printers: MutableMap<String, StarPrinter> = mutableMapOf()
 
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     channel = MethodChannel(flutterPluginBinding.binaryMessenger, "starxpand")
@@ -67,20 +63,45 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   }
 
   override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
-    _result = result
+    Log.d(tag, "onMethodCall: ${call.method} - ${call.arguments}")
 
     when (call.method) {
-      "find" -> find()
-      "print" -> print(call.arguments as Map<*, *>)
-      "openDrawer" -> openDrawer(call.arguments as Map<*, *>)
-      "startInputListener" -> startInputListener(call.arguments as Map<*, *>)
+      "findPrinters" -> findPrinters((call.arguments as Map<*, *>)["callback"] as String?, result)
+      "printDocument" -> printDocument(call.arguments as Map<*, *>, result)
+      "startInputListener" -> startInputListener(call.arguments as Map<*, *>, result)
+      "stopInputListener" -> stopInputListener(call.arguments as Map<*, *>, result)
       else -> result.notImplemented()
     }
   }
 
-  fun find() {
+  private fun getPrinter(map: Map<*, *>): StarPrinter {
+    val connection = StarConnectionSettings(interfaceTypeFromValue(map["interface"] as String)!!, map["identifier"] as String)
+
+    if (!_printers.containsKey(connection.toString())) {
+      val printer = StarPrinter(connection, activity)
+      _printers[connection.toString()] = printer
+    }
+
+    return _printers[connection.toString()]!!
+  }
+
+  fun sendCallback(guid: String, type: String, payload: Map<*, *>) {
+    Log.d(tag, "sendCallback: $guid - $payload")
+
+    activity.runOnUiThread {
+      channel.invokeMethod(
+        "callback", mutableMapOf(
+          "guid" to guid,
+          "type" to type,
+          "data" to payload
+        )
+      )
+    }
+  }
+
+  private fun findPrinters(callbackGuid: String?, result: Result) {
     try {
-      _foundPrinters.clear()
+      val foundPrinters: MutableList<StarPrinter> = mutableListOf()
 
       // Specify your printer interface types.
       val interfaceTypes: List<InterfaceType> = listOf(
@@ -101,15 +122,22 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         // Callback for printer found.
         override fun onPrinterFound(printer: StarPrinter) {
           Log.d("Discovery", "Found printer: ${printer.connectionSettings.identifier}.")
-          _foundPrinters.add(printer);
+          foundPrinters.add(printer)
+          if (callbackGuid != null) {
+            sendCallback(callbackGuid, "printerFound", mutableMapOf(
+              "model" to printer.information?.model.toString(),
+              "identifier" to printer.connectionSettings.identifier,
+              "interface" to printer.connectionSettings.interfaceType.value()
+            ))
+          }
         }
 
         // Callback for discovery finished. (option)
         override fun onDiscoveryFinished() {
           Log.d("Discovery", "Discovery finished.")
 
-          _result!!.success(mutableMapOf(
-                  "printers" to _foundPrinters.map {
+          result.success(mutableMapOf(
+                  "printers" to foundPrinters.map {
                     mutableMapOf(
                             "model" to it.information?.model.toString(),
                             "identifier" to it.connectionSettings.identifier,
@@ -125,141 +153,131 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
       // Stop discovery.
       //_manager?.stopDiscovery()
-    } catch (exception: Exception) {
+    } catch (e: Exception) {
       // Exception.
-      Log.d("Discovery", "${exception.message}")
+      Log.d("Discovery", "${e.message}")
+      result.error("error", e.localizedMessage, e)
     }
   }
 
-  fun startInputListener(@NonNull args: Map<*, *>) {
+  private fun stopInputListener(@NonNull args: Map<*, *>, result: Result) {
     Log.d("Discovery", "startInputListener. ${args["printer"]}")
-    val printer = buildPrinter(args["printer"] as Map<*, *>)
+    val printer = getPrinter(args["printer"] as Map<*, *>)
+
+    val job = SupervisorJob()
+    val scope = CoroutineScope(Dispatchers.Default + job)
+    scope.launch {
+      closePrinter(printer)
+
+      result.success(true)
+    }
+  }
+
+  private fun startInputListener(@NonNull args: Map<*, *>, result: Result) {
+    Log.d("Discovery", "startInputListener. ${args["printer"]}")
+    val callbackGuid = args["callback"] as String
+
+    val printer = getPrinter(args["printer"] as Map<*, *>)
 
     printer.inputDeviceDelegate = object : InputDeviceDelegate() {
-      override fun onCommunicationError(e: StarIO10Exception) {
-        super.onCommunicationError(e)
-        Log.d("Monitor", "Input Device: Communication Error")
-        Log.d("Monitor", "${e}")
-      }
-
-      override fun onConnected() {
-        super.onConnected()
-        Log.d("Monitor", "Input Device: Connected")
-      }
-
-      override fun onDisconnected() {
-        super.onDisconnected()
-        Log.d("Monitor", "Input Device: Disconnected")
-      }
-
       override fun onDataReceived(data: List<Byte>) {
         super.onDataReceived(data)
 
         val string = String(data.toByteArray())
 
-        Log.d("Monitor", "Input Device: DataReceived $string")
+        sendCallback(callbackGuid, "dataReceived", mutableMapOf(
+          "data" to string
+        ))
       }
     }
-
-    val job = SupervisorJob()
-    val scope = CoroutineScope(Dispatchers.Default + job)
-    scope.launch {
-      printer.openAsync().await()
-    }
-  }
-
-
-  fun openDrawer(@NonNull args: Map<*, *>) {
-    Log.d("Discovery", "openDrawer. ${args["printer"]}")
-
-    val printer = buildPrinter(args["printer"] as Map<*, *>)
-    Log.d("Discovery", "openDrawer. ${printer.connectionSettings.identifier}")
-    Log.d("Discovery", "openDrawer. ${printer.connectionSettings.interfaceType}")
-
 
     val job = SupervisorJob()
     val scope = CoroutineScope(Dispatchers.Default + job)
     scope.launch {
       try {
-        // Connect to the printer.
-        printer.openAsync().await()
+        closePrinter(printer)
+        openPrinter(printer)
 
-        val builder = StarXpandCommandBuilder()
-        builder.addDocument(
-                DocumentBuilder().addDrawer(DrawerBuilder().actionOpen(OpenParameter()))
-        )
-
-        // Get printing data from StarXpandCommandBuilder object.
-        val commands = builder.getCommands()
-
-        // Print.
-        printer.printAsync(commands).await()
+        result.success(true)
       } catch (e: Exception) {
-        // Exception.
-        Log.d("Printing", "${e.message}")
-      } finally {
-        // Disconnect from the printer.
-        printer.closeAsync().await()
+        result.error("error", e.localizedMessage, e)
       }
     }
   }
 
-  fun print(@NonNull args: Map<*, *>) {
-    Log.d("Discovery", "print. ${args["printer"]}")
+  private suspend fun openPrinter(printer: StarPrinter): Boolean {
+    return try {
+      printer.openAsync().await()
+      true
+    } catch (e: Exception) {
+      e is StarIO10InvalidOperationException
+    }
+  }
 
-    val printer = buildPrinter(args["printer"] as Map<*, *>)
+
+  private suspend fun closePrinter(printer: StarPrinter): Boolean {
+    return try {
+      printer.closeAsync().await()
+      true
+    } catch (e: Exception) {
+      false
+    }
+  }
+
+  private fun printDocument(@NonNull args: Map<*, *>, result: Result) {
+    Log.d("print", "print. ${args["printer"]}")
+
+    val printer = getPrinter(args["printer"] as Map<*, *>)
     val document = args["document"] as Map<*, *>
-    val contents = document["contents"] as Collection<Map<*, *>>
+    val contents = document["contents"] as Collection<*>
 
     Log.d("print", "document: $document")
 
     val job = SupervisorJob()
     val scope = CoroutineScope(Dispatchers.Default + job)
     scope.launch {
-      try {
-        // Connect to the printer.
-        printer.openAsync().await()
+      if (openPrinter(printer)) {
+        try {
+          val builder = StarXpandCommandBuilder()
+          val docBuilder = DocumentBuilder()
 
-        val builder = StarXpandCommandBuilder()
-        var docBuilder = DocumentBuilder();
+          for (content in contents) {
+            if (content !is Map<*, *>) continue
 
-        for (content in contents) {
-          val type = content["type"] as String
-          val data = content["data"] as Map<*, *>
+            val type = content["type"] as String
+            val data = content["data"] as Map<*, *>
 
-          when (type) {
-            "drawer" -> {
-              docBuilder.addDrawer(drawerBuilder(data))
-            }
-            "print" -> {
-              docBuilder.addPrinter(printerBuilder(data))
+            when (type) {
+              "drawer" -> {
+                docBuilder.addDrawer(getDrawerBuilder(data))
+              }
+              "print" -> {
+                docBuilder.addPrinter(getPrinterBuilder(data))
+              }
             }
           }
+
+          builder.addDocument(docBuilder)
+
+          // Get printing data from StarXpandCommandBuilder object.
+          val commands = builder.getCommands()
+
+          Log.d("print", "commands $commands")
+
+          // Print.
+          printer.printAsync(commands).await()
+          result.success(true)
+        } catch (e: java.lang.Exception) {
+          Log.d("print", "commands $e")
+          result.error("error", e.localizedMessage, e)
+        } finally {
+          closePrinter(printer)
         }
-
-        builder.addDocument(docBuilder)
-
-        // Get printing data from StarXpandCommandBuilder object.
-        val commands = builder.getCommands()
-
-        Log.d("print", "commands $commands")
-
-        // Print.
-        printer.printAsync(commands).await()
-
-        Log.d("print", "done")
-
-      } catch (e: Exception) {
-        // Exception.
-        Log.d("Printing", "${e.message}")
-      } finally {
-        // Disconnect from the printer.
-        printer.closeAsync().await()
       }
     }
   }
 
-  fun drawerBuilder(data: Map<*, *>): DrawerBuilder {
+  private fun getDrawerBuilder(data: Map<*, *>): DrawerBuilder {
     val channel = when (data["channel"]) {
       "no1" -> Channel.No1
       "no2" -> Channel.No2
@@ -268,17 +286,19 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     return DrawerBuilder().actionOpen(OpenParameter().setChannel(channel))
   }
 
-  fun printerBuilder(data: Map<*, *>): PrinterBuilder {
+  private fun getPrinterBuilder(data: Map<*, *>): PrinterBuilder {
     val printerBuilder = PrinterBuilder()
 
-    val actions = data["actions"] as Collection<Map<*, *>>
+    val actions = data["actions"] as Collection<*>
 
     Log.d("print", "print actions: $actions")
 
     for (action in actions) {
+      if (action !is Map<*, *>) continue
+
       when (action["action"] as String) {
         "add" -> {
-          printerBuilder.add(printerBuilder(action["data"] as Map<*, *>))
+          printerBuilder.add(getPrinterBuilder(action["data"] as Map<*, *>))
         }
         "style" -> {
           if (action["alignment"] != null) {
@@ -333,7 +353,7 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           }
 
           if (action["horizontalTabPosition"] != null) {
-            printerBuilder.styleHorizontalTabPositions(action["horizontalTabPosition"] as List<Int>)
+            printerBuilder.styleHorizontalTabPositions((action["horizontalTabPosition"] as List<*>).map { it as Int })
           }
 
           if (action["internationalCharacter"] != null) {
@@ -375,8 +395,8 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           }
 
           if (action["cjkCharacterPriority"] != null) {
-            printerBuilder.styleCjkCharacterPriority((action["cjkCharacterPriority"] as List<String>).map {
-              when (it) {
+            printerBuilder.styleCjkCharacterPriority((action["cjkCharacterPriority"] as List<*>).map {
+              when (it as String?) {
                 "japanese" -> CjkCharacterType.Japanese
                 "simplifiedChinese" -> CjkCharacterType.SimplifiedChinese
                 "traditionalChinese" -> CjkCharacterType.TraditionalChinese
@@ -512,18 +532,12 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         "printImage" -> {
           val image = action["image"] as ByteArray
           val width = action["width"] as Int
-          val bmp = BitmapFactory.decodeByteArray(image, 0, image.size);
+          val bmp = BitmapFactory.decodeByteArray(image, 0, image.size)
           printerBuilder.actionPrintImage(ImageParameter(bmp, width))
         }
       }
     }
     return printerBuilder
-  }
-
-  fun buildPrinter(printer: Map<*, *>): StarPrinter {
-    val connection = StarConnectionSettings(InterfaceTypeFromValue(printer["interface"] as String)!!, printer["identifier"] as String);
-
-    return StarPrinter(connection, activity)
   }
 }
 
@@ -536,7 +550,7 @@ fun InterfaceType.value() : String {
   }
 }
 
-fun InterfaceTypeFromValue(value: String) : InterfaceType? {
+fun interfaceTypeFromValue(value: String) : InterfaceType? {
   return when (value) {
     "lan" -> InterfaceType.Lan
     "bluetooth" -> InterfaceType.Bluetooth

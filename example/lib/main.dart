@@ -28,7 +28,8 @@ class _MyAppState extends State<MyApp> {
 
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> _find() async {
-    var ps = await StarXpand.find();
+    var ps = await StarXpand.find(
+        callback: (payload) => print('lib main: $payload'));
     setState(() {
       printers = ps;
     });
@@ -40,7 +41,8 @@ class _MyAppState extends State<MyApp> {
   }
 
   _startInputListener(StarXpandPrinter printer) {
-    StarXpand.startInputListener(printer);
+    StarXpand.startInputListener(
+        printer, (p) => print('_startInputListener: ${p.input}'));
   }
 
   _print(StarXpandPrinter printer) async {
@@ -130,7 +132,7 @@ Visa XXXX-XXXX-XXXX-0123
     doc.addPrint(printDoc);
     doc.addDrawer(StarXpandDocumentDrawer());
 
-    StarXpand.print(printer, doc);
+    StarXpand.printDocument(printer, doc);
   }
 
   @override
