@@ -34,7 +34,7 @@ extension StarXpandInterfaceIO on StarXpandInterface {
 
 class StarXpandPrinter {
   /// Build response using map recieved from native platform
-  StarXpandPrinter.fromMap(Map<dynamic, dynamic> response)
+  StarXpandPrinter.fromMap(Map<String, dynamic> response)
       : model = response['model'],
         identifier = response['identifier'],
         interface = StarXpandInterfaceIO.fromString(response['interface']);
@@ -50,7 +50,7 @@ class StarXpandPrinter {
     return 'model: $model, identifier: $identifier, interface: $interface';
   }
 
-  Map toMap() {
+  Map<String, dynamic> toMap() {
     return {
       'model': model,
       'identifier': identifier,
