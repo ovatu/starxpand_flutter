@@ -80,7 +80,7 @@ class StarXpand {
   }
 
   static Future<bool> openDrawer(StarXpandPrinter printer) => printDocument(
-      printer, StarXpandDocument().addDrawer(StarXpandDocumentDrawer()));
+      printer, StarXpandDocument()..addDrawer(StarXpandDocumentDrawer()));
 
   static Future<bool> printDocument(
       StarXpandPrinter printer, StarXpandDocument document) async {
