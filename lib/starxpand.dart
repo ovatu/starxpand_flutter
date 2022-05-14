@@ -68,7 +68,7 @@ class StarXpand {
         Map<String, dynamic>.from(await _channel.invokeMethod('findPrinters', {
       "callback": guid,
       "timeout": timeout,
-      "interfaces": interfaces.map((e) => e.value).toList()
+      "interfaces": interfaces.map((e) => e.name).toList()
     }) as Map);
 
     _removeCallbackHandler(guid);

@@ -58,33 +58,28 @@ class _MyAppState extends State<MyApp> {
         internationalCharacter: StarXpandStyleInternationalCharacter.usa,
         characterSpace: 0.0,
         alignment: StarXpandStyleAlignment.center);
-    printDoc.actionPrintText("""Star Clothing Boutique
-123 Star Road
-City, State 12345
+    printDoc.actionPrintText("Star Clothing Boutique\n"
+        "123 Star Road\n"
+        "City, State 12345\n");
 
-""");
     printDoc.style(alignment: StarXpandStyleAlignment.left);
-    printDoc.actionPrintText("""Date:MM/DD/YYYY    Time:HH:MM PM
---------------------------------
-""");
+    printDoc.actionPrintText("Date:MM/DD/YYYY    Time:HH:MM PM\n"
+        "--------------------------------\n");
 
     printDoc.add(StarXpandDocumentPrint()
       ..style(bold: true)
       ..actionPrintText("SALE\n"));
 
-    printDoc.actionPrintText("""SKU         Description    Total
---------------------------------
-300678566   PLAIN T-SHIRT  10.99
-300692003   BLACK DENIM    29.99
-300651148   BLUE DENIM     29.99
-300642980   STRIPED DRESS  49.99
-300638471   BLACK BOOTS    35.99
-
-Subtotal                  156.95
-Tax                         0.00
---------------------------------
-
-""");
+    printDoc.actionPrintText("SKU         Description    Total\n"
+        "--------------------------------\n"
+        "300678566   PLAIN T-SHIRT  10.99\n"
+        "300692003   BLACK DENIM    29.99\n"
+        "300651148   BLUE DENIM     29.99\n"
+        "300642980   STRIPED DRESS  49.99\n"
+        "300638471   BLACK BOOTS    35.99\n"
+        "Subtotal                  156.95\n"
+        "Tax                         0.00\n"
+        "--------------------------------\n");
 
     printDoc.actionPrintText("Total     ");
 
@@ -92,13 +87,10 @@ Tax                         0.00
       ..style(magnification: StarXpandStyleMagnification(2, 2))
       ..actionPrintText("   \$156.95\n"));
 
-    printDoc.actionPrintText("""--------------------------------
-
-Charge
-156.95
-Visa XXXX-XXXX-XXXX-0123
-
-""");
+    printDoc.actionPrintText("--------------------------------\n"
+        "Charge\n"
+        "156.95\n"
+        "Visa XXXX-XXXX-XXXX-0123\n");
 
     printDoc.add(StarXpandDocumentPrint()
       ..style(invert: true)
@@ -147,7 +139,7 @@ Visa XXXX-XXXX-XXXX-0123
             for (var p in printers!)
               ListTile(
                   onTap: () => _print(p),
-                  title: Text(p.model),
+                  title: Text(p.model.label),
                   subtitle: Text(p.identifier),
                   trailing: Text(p.interface.name))
         ]),

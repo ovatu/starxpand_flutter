@@ -134,7 +134,7 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           foundPrinters.add(printer)
           if (callbackGuid != null) {
             sendCallback(callbackGuid, "printerFound", mutableMapOf(
-              "model" to printer.information?.model.toString(),
+              "model" to printer.information?.model?.value(),
               "identifier" to printer.connectionSettings.identifier,
               "interface" to printer.connectionSettings.interfaceType.value()
             ))
@@ -146,7 +146,7 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           result.success(mutableMapOf(
                   "printers" to foundPrinters.map {
                     mutableMapOf(
-                            "model" to it.information?.model.toString(),
+                            "model" to it.information?.model?.value(),
                             "identifier" to it.connectionSettings.identifier,
                             "interface" to it.connectionSettings.interfaceType.value()
                     )
@@ -559,5 +559,31 @@ fun interfaceTypeFromValue(value: String) : InterfaceType? {
     "bluetooth" -> InterfaceType.Bluetooth
     "urb" -> InterfaceType.Usb
     else -> null
+  }
+}
+
+fun StarPrinterModel.value() : String {
+  return when (this) {
+    StarPrinterModel.TSP650II -> "tsp650II"
+    StarPrinterModel.TSP700II -> "tsp700II"
+    StarPrinterModel.TSP800II -> "tsp800II"
+    StarPrinterModel.TSP100IIU_Plus -> "tsp100IIUPlus"
+    StarPrinterModel.TSP100IIIW -> "tsp100IIIW"
+    StarPrinterModel.TSP100IIILAN -> "tsp100IIILAN"
+    StarPrinterModel.TSP100IIIBI -> "tsp100IIIBI"
+    StarPrinterModel.TSP100IIIU -> "tsp100IIIU"
+    StarPrinterModel.TSP100IV -> "tsp100IV"
+    StarPrinterModel.mPOP -> "mPOP"
+    StarPrinterModel.mC_Print2 -> "mCPrint2"
+    StarPrinterModel.mC_Print3 -> "mCPrint3"
+    StarPrinterModel.SM_S210i -> "smS210i"
+    StarPrinterModel.SM_S230i -> "smS230i"
+    StarPrinterModel.SM_T300 -> "smT300"
+    StarPrinterModel.SM_T300i -> "smT300i"
+    StarPrinterModel.SM_T400i -> "smT400i"
+    StarPrinterModel.SM_L200 -> "smL200"
+    StarPrinterModel.SM_L300 -> "smL300"
+    StarPrinterModel.SP700 -> "sp700"
+    else -> "unknown"
   }
 }

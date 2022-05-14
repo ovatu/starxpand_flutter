@@ -65,7 +65,7 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
             discoveryManager = SwiftStarxpandPluginDiscoveryManager(didFindPrinter: { _, printer in
                 if (callbackGuid != nil) {
                     self.sendCallback(guid: callbackGuid!, type: "printerFound", payload: [
-                    "model": printer.information?.model.description,
+                    "model": printer.information?.model.stringValue(),
                     "identifier": printer.connectionSettings.identifier,
                     "interface": printer.connectionSettings.interfaceType.stringValue()
                 ])
@@ -75,7 +75,7 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
                 result([
                     "printers": printers.map({ p in
                         [
-                            "model": p.information?.model.description,
+                            "model": p.information?.model.stringValue(),
                             "identifier": p.connectionSettings.identifier,
                             "interface": p.connectionSettings.interfaceType.stringValue()
                         ]
@@ -95,14 +95,14 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
     }
     
     func _printDocument(args: [String:Any?], result: @escaping FlutterResult) {
-        let printer = getPrinter(args["printer"] as! [String:Any?])
+        let printer = getPrinter(args["printer"] as! [String:Any])
 
         let document = args["document"] as! [String:Any?]
         let contents = document["contents"] as! Array<[String:Any?]>
 
         Task {
             do {
-                await try printer.open()
+                try await printer.open()
 
                 let builder = StarXpandCommand.StarXpandCommandBuilder()
                 let docBuilder = StarXpandCommand.DocumentBuilder.init()
@@ -113,23 +113,23 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
 
                     switch (type) {
                         case "drawer":
-                            docBuilder.addDrawer(getDrawerBuilder(data))
+                            _ = docBuilder.addDrawer(getDrawerBuilder(data))
                           
                         case "print":
-                            docBuilder.addPrinter(getPrinterBuilder(data))
+                            _ = docBuilder.addPrinter(getPrinterBuilder(data))
                     default:
                         print("nope")
                     }
                 }
 
-                builder.addDocument(docBuilder)
+                _ = builder.addDocument(docBuilder)
 
                 // Get printing data from StarXpandCommandBuilder object.
                 let commands = builder.getCommands()
                 
                 print(commands)
             
-                await try printer.print(command: commands)
+                try await printer.print(command: commands)
                 await printer.close()
             } catch let e3rror {
               // Error.
@@ -140,7 +140,7 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
 
     func _stopInputListener(args: [String:Any?], result: @escaping FlutterResult) {
         let callbackGuid = args["callback"] as! String
-        let printer = getPrinter(args["printer"] as! [String:Any?])
+        let printer = getPrinter(args["printer"] as! [String:Any])
 
         Task {
             await printer.close()
@@ -151,7 +151,7 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
     func _startInputListener(args: [String:Any?], result: @escaping FlutterResult) {
         let callbackGuid = args["callback"] as! String
 
-        let printer = getPrinter(args["printer"] as! [String:Any?])
+        let printer = getPrinter(args["printer"] as! [String:Any])
 
         inputManagers[callbackGuid] = SwiftStarxpandPluginInputManager { data in
             print(data)
@@ -166,7 +166,7 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
         
         Task {
             await printer.close()
-            await try printer.open()
+            try await printer.open()
         }
     }
     
@@ -202,99 +202,99 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
         for action in actions {
             switch (action["action"] as! String) {
                 case "add":
-                    printerBuilder.add(getPrinterBuilder(action["data"] as! [String:Any?]))
+                    _ = printerBuilder.add(getPrinterBuilder(action["data"] as! [String:Any?]))
                 case "style":
                     if (action["alignment"] != nil) {
                         switch (action["alignment"] as! String) {
-                            case "left": printerBuilder.styleAlignment(.left)
-                            case "center": printerBuilder.styleAlignment(.center)
-                            case "right": printerBuilder.styleAlignment(.right)
-                            default: printerBuilder.styleAlignment(.left)
+                            case "left": _ = printerBuilder.styleAlignment(.left)
+                            case "center": _ = printerBuilder.styleAlignment(.center)
+                            case "right": _ = printerBuilder.styleAlignment(.right)
+                            default: _ = printerBuilder.styleAlignment(.left)
                         }
                     }
 
                     if (action["fontType"] != nil) {
                         switch (action["fontType"] as! String) {
-                            case "a": printerBuilder.styleFont(.a)
-                            case "b": printerBuilder.styleFont(.b)
-                            default: printerBuilder.styleFont(.a)
+                            case "a": _ = printerBuilder.styleFont(.a)
+                            case "b": _ = printerBuilder.styleFont(.b)
+                            default: _ = printerBuilder.styleFont(.a)
                         }
                     }
                 
                     if (action["bold"] != nil) {
-                      printerBuilder.styleBold(action["bold"] as! Bool)
+                        _ = printerBuilder.styleBold(action["bold"] as! Bool)
                     }
 
                     if (action["invert"] != nil) {
-                      printerBuilder.styleInvert(action["invert"] as! Bool)
+                        _ = printerBuilder.styleInvert(action["invert"] as! Bool)
                     }
 
                     if (action["underLine"] != nil) {
-                      printerBuilder.styleUnderLine(action["underLine"] as! Bool)
+                        _ = printerBuilder.styleUnderLine(action["underLine"] as! Bool)
                     }
 
                     if (action["magnification"] != nil) {
                         let magnification = action["magnification"] as! Dictionary<String, Int>
 
-                        printerBuilder.styleMagnification(StarXpandCommand.MagnificationParameter(width: magnification["width"]!, height: magnification["height"]!))
+                        _ = printerBuilder.styleMagnification(StarXpandCommand.MagnificationParameter(width: magnification["width"]!, height: magnification["height"]!))
                     }
 
                     if (action["characterSpace"] != nil) {
-                      printerBuilder.styleCharacterSpace(action["characterSpace"] as! Double)
+                        _ = printerBuilder.styleCharacterSpace(action["characterSpace"] as! Double)
                     }
 
                     if (action["lineSpace"] != nil) {
-                      printerBuilder.styleLineSpace(action["lineSpace"] as! Double)
+                        _ = printerBuilder.styleLineSpace(action["lineSpace"] as! Double)
                     }
 
                     if (action["horizontalPositionTo"] != nil) {
-                      printerBuilder.styleHorizontalPositionTo(action["horizontalPositionTo"] as! Double)
+                        _ = printerBuilder.styleHorizontalPositionTo(action["horizontalPositionTo"] as! Double)
                     }
 
                     if (action["horizontalPositionBy"] != nil) {
-                      printerBuilder.styleHorizontalPositionBy(action["horizontalPositionBy"] as! Double)
+                        _ = printerBuilder.styleHorizontalPositionBy(action["horizontalPositionBy"] as! Double)
                     }
 
                     if (action["horizontalTabPosition"] != nil) {
-                      printerBuilder.styleHorizontalTabPositions(action["horizontalTabPosition"] as! Array<Int>)
+                        _ = printerBuilder.styleHorizontalTabPositions(action["horizontalTabPosition"] as! Array<Int>)
                     }
 
                     if (action["internationalCharacter"] != nil) {
                         switch (action["internationalCharacter"] as! String) {
-                            case "usa": printerBuilder.styleInternationalCharacter(.usa)
-                            case "france": printerBuilder.styleInternationalCharacter(.france)
-                            case "germany": printerBuilder.styleInternationalCharacter(.germany)
-                            case "uk": printerBuilder.styleInternationalCharacter(.uk)
-                            case "denmark": printerBuilder.styleInternationalCharacter(.denmark)
-                            case "sweden": printerBuilder.styleInternationalCharacter(.sweden)
-                            case "italy": printerBuilder.styleInternationalCharacter(.italy)
-                            case "spain": printerBuilder.styleInternationalCharacter(.spain)
-                            case "japan": printerBuilder.styleInternationalCharacter(.japan)
-                            case "norway": printerBuilder.styleInternationalCharacter(.norway)
-                            case "denmark2": printerBuilder.styleInternationalCharacter(.denmark2)
-                            case "spain2": printerBuilder.styleInternationalCharacter(.spain2)
-                            case "latinAmerica": printerBuilder.styleInternationalCharacter(.latinAmerica)
-                            case "korea": printerBuilder.styleInternationalCharacter(.korea)
-                            case "ireland": printerBuilder.styleInternationalCharacter(.ireland)
-                            case "slovenia": printerBuilder.styleInternationalCharacter(.slovenia)
-                            case "croatia": printerBuilder.styleInternationalCharacter(.croatia)
-                            case "china": printerBuilder.styleInternationalCharacter(.china)
-                            case "vietnam": printerBuilder.styleInternationalCharacter(.vietnam)
-                            case "arabic": printerBuilder.styleInternationalCharacter(.arabic)
-                            case "legal": printerBuilder.styleInternationalCharacter(.legal)
-                            default: printerBuilder.styleInternationalCharacter(.usa)
+                            case "usa": _ = printerBuilder.styleInternationalCharacter(.usa)
+                            case "france": _ = printerBuilder.styleInternationalCharacter(.france)
+                            case "germany": _ = printerBuilder.styleInternationalCharacter(.germany)
+                            case "uk": _ = printerBuilder.styleInternationalCharacter(.uk)
+                            case "denmark": _ = printerBuilder.styleInternationalCharacter(.denmark)
+                            case "sweden": _ = printerBuilder.styleInternationalCharacter(.sweden)
+                            case "italy": _ = printerBuilder.styleInternationalCharacter(.italy)
+                            case "spain": _ = printerBuilder.styleInternationalCharacter(.spain)
+                            case "japan": _ = printerBuilder.styleInternationalCharacter(.japan)
+                            case "norway": _ = printerBuilder.styleInternationalCharacter(.norway)
+                            case "denmark2": _ = printerBuilder.styleInternationalCharacter(.denmark2)
+                            case "spain2": _ = printerBuilder.styleInternationalCharacter(.spain2)
+                            case "latinAmerica": _ = printerBuilder.styleInternationalCharacter(.latinAmerica)
+                            case "korea": _ = printerBuilder.styleInternationalCharacter(.korea)
+                            case "ireland": _ = printerBuilder.styleInternationalCharacter(.ireland)
+                            case "slovenia":_ =  printerBuilder.styleInternationalCharacter(.slovenia)
+                            case "croatia": _ = printerBuilder.styleInternationalCharacter(.croatia)
+                            case "china": _ = printerBuilder.styleInternationalCharacter(.china)
+                            case "vietnam": _ = printerBuilder.styleInternationalCharacter(.vietnam)
+                            case "arabic": _ = printerBuilder.styleInternationalCharacter(.arabic)
+                            case "legal": _ = printerBuilder.styleInternationalCharacter(.legal)
+                            default: _ = printerBuilder.styleInternationalCharacter(.usa)
                         }
                     }
 
                     
                     if (action["secondPriorityCharacterEncoding"] != nil) {
                         switch (action["secondPriorityCharacterEncoding"] as! String) {
-                            case "japanese": printerBuilder.styleSecondPriorityCharacterEncoding(.japanese)
-                            case "simplifiedChinese": printerBuilder.styleSecondPriorityCharacterEncoding(.simplifiedChinese)
-                            case "traditionalChinese": printerBuilder.styleSecondPriorityCharacterEncoding(.traditionalChinese)
-                            case "korean": printerBuilder.styleSecondPriorityCharacterEncoding(.korean)
-                            case "codePage": printerBuilder.styleSecondPriorityCharacterEncoding(.codePage)
-                            default: printerBuilder.styleSecondPriorityCharacterEncoding(.japanese)
+                            case "japanese": _ = printerBuilder.styleSecondPriorityCharacterEncoding(.japanese)
+                            case "simplifiedChinese": _ = printerBuilder.styleSecondPriorityCharacterEncoding(.simplifiedChinese)
+                            case "traditionalChinese": _ = printerBuilder.styleSecondPriorityCharacterEncoding(.traditionalChinese)
+                            case "korean": _ = printerBuilder.styleSecondPriorityCharacterEncoding(.korean)
+                            case "codePage": _ = printerBuilder.styleSecondPriorityCharacterEncoding(.codePage)
+                            default: _ = printerBuilder.styleSecondPriorityCharacterEncoding(.japanese)
                         }
                     }
 
@@ -310,7 +310,7 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
                             }
                         }
                         
-                        printerBuilder.styleCJKCharacterPriority(types)
+                        _ = printerBuilder.styleCJKCharacterPriority(types)
                     }
                 
                 case "cut":
@@ -323,20 +323,20 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
                         default: cutType = .partial
                     }
 
-                    printerBuilder.actionCut(cutType)
+                    _ = printerBuilder.actionCut(cutType)
 
                 case "feed":
                     let height = (action["height"] as? Double) ?? 10.0
-                    printerBuilder.actionFeed(height)
+                    _ = printerBuilder.actionFeed(height)
                 case "feedLine":
                     let lines = (action["lines"] as? Int) ?? 1
-                    printerBuilder.actionFeedLine(lines)
+                    _ = printerBuilder.actionFeedLine(lines)
                 case "printText":
                     let text = action["text"] as! String
-                    printerBuilder.actionPrintText(text)
+                    _ = printerBuilder.actionPrintText(text)
                 case "printLogo":
                     let keyCode = action["keyCode"] as! String
-                    printerBuilder.actionPrintLogo(StarXpandCommand.Printer.LogoParameter(keyCode: keyCode))
+                    _ = printerBuilder.actionPrintLogo(StarXpandCommand.Printer.LogoParameter(keyCode: keyCode))
                 case "printBarcode":
                     let barcodeContent = action["content"] as! String
                 
@@ -359,58 +359,58 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
                     let param = StarXpandCommand.Printer.BarcodeParameter(content: barcodeContent, symbology: symbology)
 
                     if (action["printHri"] != nil) {
-                        param.setPrintHRI(action["printHri"] as! Bool)
+                        _ = param.setPrintHRI(action["printHri"] as! Bool)
                     }
                     if (action["barDots"] != nil) {
-                        param.setBarDots(action["barDots"] as! Int)
+                        _ = param.setBarDots(action["barDots"] as! Int)
                     }
                     if (action["barRatioLevel"] != nil) {
                         switch (action["barRatioLevel"] as! String) {
-                            case "levelPlus1": param.setBarRatioLevel(.levelPlus1)
-                            case "level0": param.setBarRatioLevel(.level0)
-                            case "levelMinus1": param.setBarRatioLevel(.levelMinus1)
-                            default: param.setBarRatioLevel(.level0)
+                            case "levelPlus1": _ = param.setBarRatioLevel(.levelPlus1)
+                            case "level0": _ = param.setBarRatioLevel(.level0)
+                            case "levelMinus1": _ = param.setBarRatioLevel(.levelMinus1)
+                            default: _ = param.setBarRatioLevel(.level0)
                         }
                     }
                     if (action["height"] != nil) {
-                        param.setHeight(action["height"] as! Double)
+                        _ = param.setHeight(action["height"] as! Double)
                     }
 
-                    printerBuilder.actionPrintBarcode(param)
+                    _ = printerBuilder.actionPrintBarcode(param)
                 
                 case "printPdf417":
                     let pdf417Content = action["content"] as! String
                     let param = StarXpandCommand.Printer.PDF417Parameter(content: pdf417Content)
                 
                     if (action["column"] != nil) {
-                        param.setColumn(action["column"] as! Int)
+                        _ = param.setColumn(action["column"] as! Int)
                     }
                     if (action["line"] != nil) {
-                        param.setLine(action["line"] as! Int)
+                        _ = param.setLine(action["line"] as! Int)
                     }
                     if (action["module"] != nil) {
-                        param.setModule(action["module"] as! Int)
+                        _ = param.setModule(action["module"] as! Int)
                     }
                     if (action["aspect"] != nil) {
-                        param.setAspect(action["aspect"] as! Int)
+                        _ = param.setAspect(action["aspect"] as! Int)
                     }
 
                     if (action["level"] != nil) {
                         switch (action["model"] as! String) {
-                            case "ecc0": param.setLevel(.ecc0)
-                            case "ecc1": param.setLevel(.ecc1)
-                            case "ecc2": param.setLevel(.ecc2)
-                            case "ecc3": param.setLevel(.ecc3)
-                            case "ecc4": param.setLevel(.ecc4)
-                            case "ecc5": param.setLevel(.ecc5)
-                            case "ecc6": param.setLevel(.ecc6)
-                            case "ecc7": param.setLevel(.ecc7)
-                            case "ecc8": param.setLevel(.ecc8)
-                            default: param.setLevel(.ecc0)
+                            case "ecc0": _ = param.setLevel(.ecc0)
+                            case "ecc1": _ = param.setLevel(.ecc1)
+                            case "ecc2": _ = param.setLevel(.ecc2)
+                            case "ecc3": _ = param.setLevel(.ecc3)
+                            case "ecc4": _ = param.setLevel(.ecc4)
+                            case "ecc5": _ = param.setLevel(.ecc5)
+                            case "ecc6": _ = param.setLevel(.ecc6)
+                            case "ecc7": _ = param.setLevel(.ecc7)
+                            case "ecc8": _ = param.setLevel(.ecc8)
+                            default: _ = param.setLevel(.ecc0)
                         }
                     }
 
-                    printerBuilder.actionPrintPDF417(param)
+                    _ = printerBuilder.actionPrintPDF417(param)
 
                 case "printQRCode":
                     let qrContent = action["content"] as! String
@@ -418,34 +418,36 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
 
                     if (action["model"] != nil) {
                         switch (action["model"] as! String) {
-                            case "model1": param.setModel(.model1)
-                            case "model2": param.setModel(.model2)
-                            default: param.setModel(.model1)
+                            case "model1": _ = param.setModel(.model1)
+                            case "model2": _ = param.setModel(.model2)
+                            default: _ = param.setModel(.model1)
                         }
                     }
 
                     if (action["level"] != nil) {
                         switch (action["level"] as! String) {
-                            case "l": param.setLevel(.l)
-                            case "m": param.setLevel(.m)
-                            case "q": param.setLevel(.q)
-                            case "h": param.setLevel(.h)
-                            default: param.setLevel(.l)
+                            case "l": _ = param.setLevel(.l)
+                            case "m": _ = param.setLevel(.m)
+                            case "q": _ = param.setLevel(.q)
+                            case "h": _ = param.setLevel(.h)
+                            default: _ = param.setLevel(.l)
                         }
                     }
                 
                     if (action["cellSize"] != nil) {
-                        param.setCellSize(action["cellSize"] as! Int)
+                        _ = param.setCellSize(action["cellSize"] as! Int)
                     }
 
-                    printerBuilder.actionPrintQRCode(param)
+                    _ = printerBuilder.actionPrintQRCode(param)
 
                 case "printImage":
                     let image = action["image"] as! FlutterStandardTypedData
                     let width = action["width"] as! Int
-                    let bmp = UIImage(data: image.data)!
+                    let bmp = UIImage(data: image.data)
 
-                    printerBuilder.actionPrintImage(StarXpandCommand.Printer.ImageParameter(image: bmp, width: width))
+                    if (bmp != nil) {
+                        _ = printerBuilder.actionPrintImage(StarXpandCommand.Printer.ImageParameter(image: bmp!, width: width))
+                    }
                 default:
                 print("TODO")
             }
@@ -507,25 +509,49 @@ class SwiftStarxpandPluginInputManager: InputDeviceDelegate {
 extension StarIO10.InterfaceType {
     public func stringValue() -> String {
         switch (self) {
-        case .unknown: return "unknown"
-        case .usb: return "usb"
-        case .bluetooth: return "bluetooth"
-        case .bluetoothLE: return "bluetoothLE"
-        case .lan: return "lan"
-        @unknown default:
-            return "unknown"
+            case .unknown: return "unknown"
+            case .usb: return "usb"
+            case .bluetooth: return "bluetooth"
+            case .bluetoothLE: return "bluetoothLE"
+            case .lan: return "lan"
+            default: return "unknown"
         }
     }
     
     static func fromString(_ value : String) -> StarIO10.InterfaceType {
         switch (value) {
-        case "unknown": return .unknown
-        case "usb": return .usb
-        case "bluetooth": return .bluetooth
-        case "bluetoothLE": return .bluetoothLE
-        case "lan": return .lan
-        default:
-            return .unknown
+            case "unknown": return .unknown
+            case "usb": return .usb
+            case "bluetooth": return .bluetooth
+            case "bluetoothLE": return .bluetoothLE
+            case "lan": return .lan
+            default: return .unknown
+        }
+    }
+}
+
+extension StarIO10.StarPrinterModel {
+    public func stringValue() -> String {
+        switch (self) {
+            case .tsp650II: return "tsp650II"
+            case .tsp700II: return "tsp700II"
+            case .tsp800II: return "tsp800II"
+            case .tsp100IIIW: return "tsp100IIIW"
+            case .tsp100IIILAN: return "tsp100IIILAN"
+            case .tsp100IIIBI: return "tsp100IIIBI"
+            case .tsp100IIIU: return "tsp100IIIU"
+            case .tsp100IV: return "tsp100IV"
+            case .mPOP: return "mPOP"
+            case .mC_Print2: return "mCPrint2"
+            case .mC_Print3: return "mCPrint3"
+            case .sm_S210i: return "smS210i"
+            case .sm_S230i: return "smS230i"
+            case .sm_T300i: return "smT300i"
+            case .sm_T400i: return "smT400i"
+            case .sm_L200: return "smL200"
+            case .sm_L300: return "smL300"
+            case .sp700: return "sp700"
+            default: return "unknown"
         }
     }
 }

@@ -1,46 +1,61 @@
-enum StarXpandInterface { unknown, usb, bluetooth, bluetoothLE, lan }
+enum StarXpandInterface {
+  unknown,
+  usb,
+  bluetooth,
+  bluetoothLE,
+  lan;
 
-extension StarXpandInterfaceIO on StarXpandInterface {
-  static StarXpandInterface fromString(String value) {
-    switch (value) {
-      case "usb":
-        return StarXpandInterface.usb;
-      case "bluetooth":
-        return StarXpandInterface.bluetooth;
-      case "bluetoothLE":
-        return StarXpandInterface.bluetoothLE;
-      case "lan":
-        return StarXpandInterface.lan;
-    }
+  static StarXpandInterface fromName(String name) =>
+      StarXpandInterface.values.where((e) => e.name == name).first;
+}
 
-    return StarXpandInterface.unknown;
-  }
+enum StarXpandPrinterPaper {
+  mm58, // 385
+  mm76, // 530
+  mm80, // 567
+  mm112
+}
 
-  String get value {
-    switch (this) {
-      case StarXpandInterface.unknown:
-        return "unknown";
-      case StarXpandInterface.usb:
-        return "usb";
-      case StarXpandInterface.bluetooth:
-        return "bluetooth";
-      case StarXpandInterface.bluetoothLE:
-        return "bluetoothLE";
-      case StarXpandInterface.lan:
-        return "lan";
-    }
-  }
+enum StarXpandPrinterModel {
+  tsp650II('TSP 650 II', [StarXpandPrinterPaper.mm80]),
+  tsp700II('TSP 600 II', [StarXpandPrinterPaper.mm80]),
+  tsp800II('TSP 800 II', [StarXpandPrinterPaper.mm80]),
+  tsp100IIUPlus('TSP 100 II U+', [StarXpandPrinterPaper.mm80]),
+  tsp100IIIW('TSP 100 III W', [StarXpandPrinterPaper.mm80]),
+  tsp100IIILAN('TSP 100 III LAN', [StarXpandPrinterPaper.mm80]),
+  tsp100IIIBI('TSP 100 III BI', [StarXpandPrinterPaper.mm80]),
+  tsp100IIIU('TSP 100 III U', [StarXpandPrinterPaper.mm80]),
+  tsp100IV('TSP 800II', [StarXpandPrinterPaper.mm80]),
+  mPOP('mPOP', [StarXpandPrinterPaper.mm58]),
+  mCPrint2('mC-Print2', [StarXpandPrinterPaper.mm58]),
+  mCPrint3('mC-Print3', [StarXpandPrinterPaper.mm80]),
+  smS210i('SM-S210i', [StarXpandPrinterPaper.mm58]),
+  smS230i('SM-S230i', [StarXpandPrinterPaper.mm58]),
+  smT300('SM-T300', [StarXpandPrinterPaper.mm80]),
+  smT300i('SM-T300i', [StarXpandPrinterPaper.mm80]),
+  smT400i('SM-T400i', [StarXpandPrinterPaper.mm112]),
+  smL200('SM-L200', [StarXpandPrinterPaper.mm58]),
+  smL300('SM-L300', [StarXpandPrinterPaper.mm58]),
+  sp700('SP-700', [StarXpandPrinterPaper.mm76]),
+  unknown('Unknown', []);
+
+  final String label;
+  final List<StarXpandPrinterPaper> paper;
+
+  const StarXpandPrinterModel(this.label, this.paper);
+  static StarXpandPrinterModel fromName(String name) =>
+      StarXpandPrinterModel.values.where((e) => e.name == name).first;
 }
 
 class StarXpandPrinter {
   /// Build response using map recieved from native platform
   StarXpandPrinter.fromMap(Map<String, dynamic> response)
-      : model = response['model'],
+      : model = StarXpandPrinterModel.fromName(response['model']),
         identifier = response['identifier'],
-        interface = StarXpandInterfaceIO.fromString(response['interface']);
+        interface = StarXpandInterface.fromName(response['interface']);
 
   // Name of the called method
-  String model;
+  StarXpandPrinterModel model;
   String identifier;
   StarXpandInterface interface;
 
@@ -52,9 +67,9 @@ class StarXpandPrinter {
 
   Map<String, dynamic> toMap() {
     return {
-      'model': model,
+      'model': model.name,
       'identifier': identifier,
-      'interface': interface.value
+      'interface': interface.name
     };
   }
 }
