@@ -103,8 +103,8 @@ class StarXpand {
   }
 
   static Future stopInputListener(StarXpandPrinter printer, String guid) async {
-    await _channel
-        .invokeMethod('stopInputListener', {"printer": printer.toMap()});
+    await _channel.invokeMethod(
+        'stopInputListener', {"callback": guid, "printer": printer.toMap()});
 
     _removeCallbackHandler(guid);
   }
