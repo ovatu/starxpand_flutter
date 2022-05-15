@@ -181,6 +181,8 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
         let connection = StarConnectionSettings(interfaceType: InterfaceType.fromString(printer["interface"] as! String),
                                                             identifier: printer["identifier"] as! String)
         
+        print(connection.description)
+        
         if (!printers.keys.contains(connection.description)) {
             let printer = StarPrinter(connection)
             printers[connection.description] = printer
