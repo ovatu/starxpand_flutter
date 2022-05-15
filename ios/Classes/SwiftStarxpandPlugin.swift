@@ -131,9 +131,13 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
             
                 try await printer.print(command: commands)
                 await printer.close()
+                
+                result(true)
             } catch let e3rror {
               // Error.
                 print(e3rror)
+                
+                result(false)
             }
         }
     }
@@ -145,6 +149,7 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
         Task {
             await printer.close()
             inputManagers.removeValue(forKey: callbackGuid)
+            result(true)
         }
     }
 
@@ -167,6 +172,8 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
         Task {
             await printer.close()
             try await printer.open()
+            
+            result(true)
         }
     }
     

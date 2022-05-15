@@ -10,10 +10,14 @@ enum StarXpandInterface {
 }
 
 enum StarXpandPrinterPaper {
-  mm58, // 385
-  mm76, // 530
-  mm80, // 567
-  mm112
+  mm58('58mm'), // 385
+  mm76('76mm'), // 530
+  mm80('80mm'), // 567
+  mm112('112mm');
+
+  final String label;
+
+  const StarXpandPrinterPaper(this.label);
 }
 
 enum StarXpandPrinterModel {
