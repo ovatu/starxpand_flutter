@@ -41,7 +41,7 @@ class _MyAppState extends State<MyApp> {
 
   _startInputListener(StarXpandPrinter printer) {
     StarXpand.startInputListener(
-        printer, (p) => print('_startInputListener: ${p.input}'));
+        printer, (p) => print('_startInputListener: ${p.inputString}'));
   }
 
   _print(StarXpandPrinter printer) async {

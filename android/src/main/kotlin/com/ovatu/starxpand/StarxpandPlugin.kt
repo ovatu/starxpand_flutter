@@ -189,7 +189,8 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         val string = String(data.toByteArray())
 
         sendCallback(callbackGuid, "dataReceived", mutableMapOf(
-          "data" to string
+          "data" to data.toByteArray(),
+          "string" to string
         ))
       }
     }

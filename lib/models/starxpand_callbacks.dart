@@ -1,3 +1,6 @@
+import 'dart:ffi';
+import 'dart:typed_data';
+
 import 'starxpand_printer.dart';
 
 typedef StarXpandCallback<T extends StarXpandCallbackPayload> = void Function(
@@ -51,13 +54,15 @@ class StarXpandPrinterPayload extends StarXpandCallbackPayload {
 }
 
 class StarXpandInputPayload extends StarXpandCallbackPayload {
-  late final String input;
+  late final String inputString;
+  late final Uint8List inputData;
 
   StarXpandInputPayload(String type, Map<String, dynamic> payload)
       : super(type, payload);
 
   @override
   fromMap(Map<String, dynamic> data) {
-    input = data["data"];
+    inputString = data["string"];
+    inputData = data["data"];
   }
 }

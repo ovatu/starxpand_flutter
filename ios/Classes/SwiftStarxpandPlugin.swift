@@ -136,7 +136,8 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
             } catch let e3rror {
               // Error.
                 print(e3rror)
-                
+                await printer.close()
+
                 result(false)
             }
         }
@@ -148,6 +149,7 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
 
         Task {
             await printer.close()
+
             inputManagers.removeValue(forKey: callbackGuid)
             result(true)
         }
@@ -163,15 +165,26 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
             print(String(decoding: data, as: UTF8.self))
 
             self.sendCallback(guid: callbackGuid, type: "dataReceived", payload: [
-                "data": String(decoding: data, as: UTF8.self)
+                "data": FlutterStandardTypedData(bytes: data),
+                "string": String(decoding: data, as: UTF8.self)
             ])
         }
         
         printer.inputDeviceDelegate = inputManagers[callbackGuid]!
         
         Task {
-            await printer.close()
-            try await printer.open()
+            do {
+                try await printer.open()
+
+                print(printer)
+
+            } catch let e3rror {
+            // Error.
+              print(e3rror)
+                 await printer.close()
+
+              result(false)
+            }
             
             result(true)
         }
@@ -179,18 +192,16 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
     
     func getPrinter(_ printer : [String:Any]) -> StarPrinter {
         let connection = StarConnectionSettings(interfaceType: InterfaceType.fromString(printer["interface"] as! String),
-                                                            identifier: printer["identifier"] as! String)
-        
-        print(connection.description)
+                                                            identifier: printer["identifier"] as! String, autoSwitchInterface: true)
         
         if (!printers.keys.contains(connection.description)) {
             let printer = StarPrinter(connection)
             printers[connection.description] = printer
         }
         
-        return StarPrinter(connection)
+        return printers[connection.description]!
     }
-    
+
     func getDrawerBuilder(_ data: [String:Any?]) -> StarXpandCommand.DrawerBuilder {
         
         var channel: StarXpandCommand.Drawer.Channel! = nil
