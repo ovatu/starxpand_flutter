@@ -549,7 +549,7 @@ fun InterfaceType.value() : String {
   return when (this) {
     InterfaceType.Lan -> "lan"
     InterfaceType.Bluetooth -> "bluetooth"
-    InterfaceType.Usb -> "urb"
+    InterfaceType.Usb -> "usb"
     else -> "unknown"
   }
 }
@@ -558,7 +558,7 @@ fun interfaceTypeFromValue(value: String) : InterfaceType? {
   return when (value) {
     "lan" -> InterfaceType.Lan
     "bluetooth" -> InterfaceType.Bluetooth
-    "urb" -> InterfaceType.Usb
+    "usb" -> InterfaceType.Usb
     else -> null
   }
 }

@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:starxpand/models/starxpand_document_drawer.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:flutter/services.dart';
 import 'package:starxpand/models/starxpand_callbacks.dart';
 import 'package:starxpand/models/starxpand_document.dart';
 import 'package:starxpand/models/starxpand_printer.dart';
+import 'package:starxpand/models/starxpand_document_drawer.dart';
 
 export 'package:starxpand/models/starxpand_callbacks.dart';
 export 'package:starxpand/models/starxpand_printer.dart';

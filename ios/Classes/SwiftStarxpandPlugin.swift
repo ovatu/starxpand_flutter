@@ -39,7 +39,6 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
     }
 
     func _findPrinters(args: [String:Any?], result: @escaping FlutterResult) {
-        print(args)
         do {
             let callbackGuid = args["callback"] as? String
             let timeout = args["timeout"] as! Int
@@ -71,7 +70,6 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
                 ])
                 }
             }, didFinishDiscovery: { _, printers in
-                print("here ", printers);
                 result([
                     "printers": printers.map({ p in
                         [
@@ -126,16 +124,12 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
 
                 // Get printing data from StarXpandCommandBuilder object.
                 let commands = builder.getCommands()
-                
-                print(commands)
-            
+                            
                 try await printer.print(command: commands)
                 await printer.close()
                 
                 result(true)
             } catch let e3rror {
-              // Error.
-                print(e3rror)
                 await printer.close()
 
                 result(false)
@@ -161,9 +155,6 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
         let printer = getPrinter(args["printer"] as! [String:Any])
 
         inputManagers[callbackGuid] = SwiftStarxpandPluginInputManager { data in
-            print(data)
-            print(String(decoding: data, as: UTF8.self))
-
             self.sendCallback(guid: callbackGuid, type: "dataReceived", payload: [
                 "data": FlutterStandardTypedData(bytes: data),
                 "string": String(decoding: data, as: UTF8.self)
@@ -175,12 +166,7 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
         Task {
             do {
                 try await printer.open()
-
-                print(printer)
-
             } catch let e3rror {
-            // Error.
-              print(e3rror)
                  await printer.close()
 
               result(false)
@@ -490,13 +476,11 @@ class SwiftStarxpandPluginDiscoveryManager: StarDeviceDiscoveryManagerDelegate {
     }
 
     public func manager(_ manager: StarDeviceDiscoveryManager, didFind printer: StarPrinter) {
-        print("manager didFind printer")
         printers.append(printer)
         didFindPrinter(manager, printer)
     }
     
     public func managerDidFinishDiscovery(_ manager: StarDeviceDiscoveryManager) {
-        print("managerDidFinishDiscovery")
         didFinishDiscovery(manager, printers)
     }
 }
