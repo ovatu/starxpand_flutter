@@ -1,10 +1,14 @@
 package com.ovatu.starxpand
 
+import android.Manifest
 import android.app.Activity
-import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
+import android.os.Build
 import android.util.Log
 import androidx.annotation.NonNull
+import androidx.core.app.ActivityCompat.requestPermissions
+import androidx.core.content.ContextCompat.checkSelfPermission
 import com.starmicronics.stario10.*
 import com.starmicronics.stario10.starxpandcommand.*
 import com.starmicronics.stario10.starxpandcommand.drawer.Channel
@@ -14,13 +18,10 @@ import com.starmicronics.stario10.starxpandcommand.printer.*
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
-import io.flutter.plugin.common.MessageCodec
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
-import io.flutter.plugin.platform.PlatformView
-import io.flutter.plugin.platform.PlatformViewFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -39,6 +40,7 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
   private var _manager: StarDeviceDiscoveryManager? = null
   private var _printers: MutableMap<String, StarPrinter> = mutableMapOf()
+  private var _permissionCallback: ((requestCode: Int, permissions: Array<String>, grantResults: IntArray)->Unit)? = null
 
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     channel = MethodChannel(flutterPluginBinding.binaryMessenger, "starxpand")
@@ -52,6 +54,14 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {
     Log.d(tag, "onAttachedToActivity")
     activity = binding.activity
+    binding.addRequestPermissionsResultListener { requestCode, permissions, grantResults -> callPermissionCallbacks(requestCode, permissions, grantResults) }
+  }
+
+  private fun callPermissionCallbacks(requestCode: Int, permissions: Array<String>, grantResults: IntArray): Boolean {
+    Log.d(tag, "callPermissionCallbacks")
+    _permissionCallback?.invoke(requestCode, permissions, grantResults)
+
+    return true
   }
 
   override fun onDetachedFromActivityForConfigChanges() {
@@ -103,7 +113,22 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     }
   }
 
-  private fun findPrinters(@NonNull args: Map<*, *>, result: Result) {
+  private var _findPrintersResult: Result? = null
+  private var _findPrintersArgs: Map<*, *>? = null
+
+  private fun hasBluetoothPermission(): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+      return true
+    }
+
+    return checkSelfPermission(activity, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
+  }
+
+  private fun findPrinters(@NonNull args: Map<*, *>, result: Result, requestBluetooth: Boolean = true) {
+    Log.d("Discovery", "findPrinters")
+    _findPrintersResult = result
+    _findPrintersArgs = args
+
     val callbackGuid = args["callback"] as String?
     val timeout = args["timeout"] as Int
     val interfaces = args["interfaces"] as List<*>
@@ -121,6 +146,28 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           else -> InterfaceType.Unknown
         }
       }).toList()
+
+      if (interfaceTypes.contains(InterfaceType.Bluetooth)) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasBluetoothPermission() && requestBluetooth) {
+          _permissionCallback = { requestCode, _, grantResults ->
+            if (requestCode == 1000 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+              findPrinters(args, result, false)
+            } else {
+              result.error("error", "Bluetooth permission denied", null)
+            }
+          }
+
+          requestPermissions(activity,
+            arrayOf(
+              Manifest.permission.BLUETOOTH_CONNECT,
+            ), 1000
+          )
+
+          Log.d("Discovery", "requesting bluetooth permission")
+
+          return
+        }
+      }
 
       _manager = StarDeviceDiscoveryManagerFactory.create(
               interfaceTypes,
