@@ -5,3 +5,7 @@
 ## 0.0.2
 
 * Add support for Android 12 (Bluetooth permissions request)
+
+## 0.0.3
+
+* Update SDKs
