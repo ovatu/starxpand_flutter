@@ -435,7 +435,7 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           }
 
           if (action["secondPriorityCharacterEncoding"] != null) {
-            printerBuilder.styleSecondPriorityCharacterEncoding(when (data["secondPriorityCharacterEncoding"]) {
+            printerBuilder.styleSecondPriorityCharacterEncoding(when (action["secondPriorityCharacterEncoding"]) {
               "japanese" -> CharacterEncodingType.Japanese
               "simplifiedChinese" -> CharacterEncodingType.SimplifiedChinese
               "traditionalChinese" -> CharacterEncodingType.TraditionalChinese
