@@ -334,7 +334,7 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       "no2" -> Channel.No2
       else -> Channel.No1
     }
-    return DrawerBuilder().actionOpen(OpenParameter().setChannel(channel).setOnTime(0))
+    return DrawerBuilder().actionOpen(OpenParameter().setOnTime(1).setChannel(channel))
   }
 
   private fun getPrinterBuilder(data: Map<*, *>): PrinterBuilder {
