@@ -190,44 +190,6 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
         // Callback for discovery finished. (option)
         override fun onDiscoveryFinished() {
-
-          // TODO Remove this
-          // foundPrinters.get(0).connectionSettings
-          val settings = foundPrinters.get(0).connectionSettings
-          val printer = StarPrinter(settings, activity)
-
-          val job = SupervisorJob()
-          val scope = CoroutineScope(Dispatchers.Default + job)
-
-          scope.launch {
-            try {
-              val builder = StarXpandCommandBuilder()
-              builder.addDocument(
-                      DocumentBuilder()
-                              .addDrawer(
-                                      DrawerBuilder()
-                                              .actionOpen(OpenParameter()
-                                                      .setChannel(Channel.No1)
-                                              )
-                              )
-              )
-
-              val commands = builder.getCommands()
-
-              printer.openAsync().await()
-              printer.printAsync(commands).await()
-
-              Log.d("Printing", "Success")
-            } catch (e: StarIO10NotFoundException) {
-              // Printer not found.
-              // This may be due to the printer not being turned on or incorrect connection information.
-            } catch (e: Exception) {
-              Log.d("Printing", "Error: ${e}")
-            } finally {
-              printer.closeAsync().await()
-            }
-          }
-
           result.success(mutableMapOf(
                   "printers" to foundPrinters.map {
                     mutableMapOf(

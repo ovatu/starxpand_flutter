@@ -61,24 +61,20 @@ class _MyAppState extends State<MyApp> {
         "123 Star Road\n"
         "City, State 12345\n");
 
-    printDoc.style(alignment: StarXpandStyleAlignment.left);
-    printDoc.actionPrintText("Date:MM/DD/YYYY    Time:HH:MM PM\n"
-        "--------------------------------\n");
+
+
+    printDoc.style(alignment: StarXpandStyleAlignment.center);
+    printDoc.actionPrintText("Time:HH:MM PM");
+    printDoc
+        ..style(alignment: StarXpandStyleAlignment.left, horizontalPositionBy: 0.0, horizontalPositionTo: 2.0)
+        ..actionPrintText("Date:MM/DD/YYYY")
+        ..style(alignment: StarXpandStyleAlignment.left, horizontalPositionBy: 2.0, horizontalPositionTo: 36.0)
+        ..actionPrintText("DUDU")
+    ;
 
     printDoc.add(StarXpandDocumentPrint()
       ..style(bold: true)
       ..actionPrintText("SALE\n"));
-
-    printDoc.actionPrintText("SKU         Description    Total\n"
-        "--------------------------------\n"
-        "300678566   PLAIN T-SHIRT  10.99\n"
-        "300692003   BLACK DENIM    29.99\n"
-        "300651148   BLUE DENIM     29.99\n"
-        "300642980   STRIPED DRESS  49.99\n"
-        "300638471   BLACK BOOTS    35.99\n"
-        "Subtotal                  156.95\n"
-        "Tax                         0.00\n"
-        "--------------------------------\n");
 
     printDoc.actionPrintText("Total     ");
 
@@ -86,31 +82,14 @@ class _MyAppState extends State<MyApp> {
       ..style(magnification: StarXpandStyleMagnification(2, 2))
       ..actionPrintText("   \$156.95\n"));
 
-    printDoc.actionPrintText("--------------------------------\n"
-        "Charge\n"
-        "156.95\n"
-        "Visa XXXX-XXXX-XXXX-0123\n");
-
-    printDoc.add(StarXpandDocumentPrint()
-      ..style(invert: true)
-      ..actionPrintText("Refunds and Exchanges\n"));
-
-    printDoc.actionPrintText("Within ");
-
-    printDoc.add(StarXpandDocumentPrint()
-      ..style(underLine: true)
-      ..actionPrintText("30 days"));
-
-    printDoc.actionPrintText(" with receipt\n");
-    printDoc.actionPrintText("And tags attached\n\n");
-
     printDoc.style(alignment: StarXpandStyleAlignment.center);
 
     printDoc.actionPrintBarcode("0123456",
         symbology: StarXpandBarcodeSymbology.jan8,
         barDots: 3,
         height: 5,
-        printHri: true);
+        printHri: true
+    );
 
     printDoc.actionFeedLine(1);
 
