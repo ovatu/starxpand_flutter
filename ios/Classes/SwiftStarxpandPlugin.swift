@@ -20,10 +20,12 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch(call.method) {
-        case "findPrinters": _findPrinters(args: call.arguments as! [String:Any?], result: result)
-        case "printDocument": _printDocument(args: call.arguments as! [String:Any?], result: result)
-        case "startInputListener": _startInputListener(args: call.arguments as! [String:Any?], result: result)
-        case "stopInputListener": _stopInputListener(args: call.arguments as! [String:Any?], result: result)
+            case "findPrinters": _findPrinters(args: call.arguments as! [String:Any?], result: result)
+            case "printDocument": _printDocument(args: call.arguments as! [String:Any?], result: result)
+            case "startInputListener": _startInputListener(args: call.arguments as! [String:Any?], result: result)
+            case "stopInputListener": _stopInputListener(args: call.arguments as! [String:Any?], result: result)
+            case "open": _open(args: call.arguments as! [String:Any?], result: result)
+            case "close": _close(args: call.arguments as! [String:Any?], result: result)
             default:
             result(false)
         }
@@ -92,6 +94,36 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
         }
     }
     
+
+    func _open(args: [String:Any?], result: @escaping FlutterResult) {
+        let printer = getPrinter(args["printer"] as! [String:Any])
+
+        Task {
+            do {
+                try await printer.open()
+                result(true)
+            } catch let e3rror {
+                result(false)
+            }
+        }
+    }
+
+    func _close(args: [String:Any?], result: @escaping FlutterResult) {
+        let printer = getPrinter(args["printer"] as! [String:Any])
+
+        Task {
+            do {
+                await printer.close()
+
+                result(true)
+             } catch let e3rror {
+           
+
+                result(false)
+            }
+        }
+    }
+
     func _printDocument(args: [String:Any?], result: @escaping FlutterResult) {
         let printer = getPrinter(args["printer"] as! [String:Any])
 
@@ -154,12 +186,22 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
 
         let printer = getPrinter(args["printer"] as! [String:Any])
 
-        inputManagers[callbackGuid] = SwiftStarxpandPluginInputManager { data in
-            self.sendCallback(guid: callbackGuid, type: "dataReceived", payload: [
-                "data": FlutterStandardTypedData(bytes: data),
-                "string": String(decoding: data, as: UTF8.self)
-            ])
-        }
+        inputManagers[callbackGuid] = SwiftStarxpandPluginInputManager(
+            didReceiveData: {
+                data in self.sendCallback(guid: callbackGuid, type: "dataReceived", payload: [
+                    "data": FlutterStandardTypedData(bytes: data),
+                    "string": String(decoding: data, as: UTF8.self)
+                ])
+            }, didReceiveError: {
+                error in self.sendCallback(guid: callbackGuid + "_error", type: "errorReceived", payload: [
+                    "error": error.localizedDescription
+                ])
+            }, didConnect: {
+                self.sendCallback(guid: callbackGuid + "_connected", type: "connected", payload: [:])
+            }, didDisconnect: {
+                self.sendCallback(guid: callbackGuid + "_disconnected", type: "disconnected", payload: [:])
+            }
+        )
         
         printer.inputDeviceDelegate = inputManagers[callbackGuid]!
         
@@ -168,7 +210,6 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
                 try await printer.open()
             } catch let e3rror {
                  await printer.close()
-
               result(false)
             }
             
@@ -487,22 +528,33 @@ class SwiftStarxpandPluginDiscoveryManager: StarDeviceDiscoveryManagerDelegate {
 
 class SwiftStarxpandPluginInputManager: InputDeviceDelegate {
     var didReceiveData: (Data) -> Void
+    var didReceiveError: (Error) -> Void
+    var didConnect: () -> Void
+    var didDisconnect: () -> Void
 
-    init(didReceiveData: @escaping (Data) -> Void) {
+    init(
+        didReceiveData: @escaping (Data) -> Void,
+        didReceiveError: @escaping (Error) -> Void,
+        didConnect: @escaping () -> Void,
+        didDisconnect: @escaping () -> Void
+    ) {
         // perform some initialization here
         self.didReceiveData = didReceiveData
+        self.didReceiveError = didReceiveError
+        self.didConnect = didConnect
+        self.didDisconnect = didDisconnect
     }
 
     func inputDevice(printer: StarIO10.StarPrinter, communicationErrorDidOccur error: Error) {
-        
+        didReceiveError(error)
     }
 
     func inputDeviceDidConnect(printer: StarIO10.StarPrinter) {
-        
+        didConnect()
     }
 
     func inputDeviceDidDisconnect(printer: StarIO10.StarPrinter) {
-        
+        didDisconnect()
     }
 
     public func inputDevice(printer: StarIO10.StarPrinter, didReceive data: Data) {
