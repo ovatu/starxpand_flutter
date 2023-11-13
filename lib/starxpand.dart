@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:starxpand/models/starxpand_document_display.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:flutter/services.dart';
@@ -87,6 +88,10 @@ class StarXpand {
     return await _channel.invokeMethod('printDocument',
         {"printer": printer.toMap(), "document": document.toMap()});
   }
+
+  static Future<bool> updateDisplay(
+          StarXpandPrinter printer, StarXpandDocumentDisplay display) =>
+      printDocument(printer, StarXpandDocument()..addDisplay(display));
 
   static Future<String> startInputListener(StarXpandPrinter printer,
       StarXpandCallback<StarXpandInputPayload> callback) async {

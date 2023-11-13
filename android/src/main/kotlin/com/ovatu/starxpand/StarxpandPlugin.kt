@@ -11,6 +11,7 @@ import androidx.core.app.ActivityCompat.requestPermissions
 import androidx.core.content.ContextCompat.checkSelfPermission
 import com.starmicronics.stario10.*
 import com.starmicronics.stario10.starxpandcommand.*
+import com.starmicronics.stario10.starxpandcommand.display.Contrast
 import com.starmicronics.stario10.starxpandcommand.drawer.Channel
 import com.starmicronics.stario10.starxpandcommand.drawer.OpenParameter
 import com.starmicronics.stario10.starxpandcommand.printer.*
@@ -305,6 +306,9 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
               "print" -> {
                 docBuilder.addPrinter(getPrinterBuilder(data))
               }
+              "display" -> {
+                docBuilder.addDisplay(getDisplayBuilder(data))
+              }
             }
           }
 
@@ -334,7 +338,48 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       "no2" -> Channel.No2
       else -> Channel.No1
     }
-    return DrawerBuilder().actionOpen(OpenParameter().setOnTime(1).setChannel(channel))
+    return DrawerBuilder().actionOpen(OpenParameter().setOnTime(0).setChannel(channel))
+  }
+
+  private fun getDisplayBuilder(data: Map<*, *>): DisplayBuilder {
+    val displayBuilder = DisplayBuilder()
+    val actions = data["actions"] as Collection<*>
+
+    Log.d("display", "display actions: $actions")
+
+    for (action in actions) {
+      if (action !is Map<*, *>) continue
+
+      when (action["action"] as String) {
+        "showText" -> {
+          displayBuilder.actionShowText(action["data"] as String)
+        }
+        "clearAll" -> {
+          displayBuilder.actionClearAll()
+        }
+        "clearLine" -> {
+          displayBuilder.actionClearLine()
+        }
+        "setContrast" -> {
+          displayBuilder.actionSetContrast(when(action["data"]) {
+            "minus3" -> Contrast.Minus3
+            "minus2" -> Contrast.Minus2
+            "minus1" -> Contrast.Minus1
+            "plus1" -> Contrast.Plus1
+            "plus2" -> Contrast.Plus2
+            "plus3" -> Contrast.Plus3
+            else -> Contrast.Default
+          })
+        }
+        "showImage" -> {
+          val image = action["image"] as ByteArray
+          val bmp = BitmapFactory.decodeByteArray(image, 0, image.size)
+          displayBuilder.actionShowImage(com.starmicronics.stario10.starxpandcommand.display.ImageParameter(bmp))
+        }
+      }
+    }
+
+    return displayBuilder
   }
 
   private fun getPrinterBuilder(data: Map<*, *>): PrinterBuilder {
