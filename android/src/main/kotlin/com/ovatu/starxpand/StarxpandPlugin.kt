@@ -83,6 +83,7 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     when (call.method) {
       "findPrinters" -> findPrinters(call.arguments as Map<*, *>, result)
       "printDocument" -> printDocument(call.arguments as Map<*, *>, result)
+      "updateDisplay" -> printDocument(call.arguments as Map<*, *>, result)
       "startInputListener" -> startInputListener(call.arguments as Map<*, *>, result)
       "stopInputListener" -> stopInputListener(call.arguments as Map<*, *>, result)
       else -> result.notImplemented()
