@@ -90,11 +90,24 @@ doc.addDrawer(StarXpandDocumentDrawer());
 StarXpand.printDocument(printer, doc);
 ```
 
+Display:
+
+```dart
+var displayDoc = StarXpandDocumentDisplay()
+  ..actionClearAll()
+  ..actionClearLine()
+  ..actionShowText("StarXpand says:\n")
+  ..actionClearLine()
+  ..actionShowText("Hello world!");
+
+StarXpand.updateDisplay(printer, displayDoc);
+```
+
 ## Available APIs
 
 ```dart
 StarXpand.findPrinters(interfaces, timeout, callback);
-
+StarXpand.updateDisplay(printer, stringData);
 StarXpand.openDrawer(printer);
 StarXpand.printDocument(printer, document);
 StarXpand.startInputListener(printer);
