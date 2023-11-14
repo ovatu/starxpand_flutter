@@ -106,6 +106,7 @@ StarXpand.updateDisplay(printer, displayDoc);
 ## Available APIs
 
 ```dart
+StarXpand.getStatus(printer);
 StarXpand.findPrinters(interfaces, timeout, callback);
 StarXpand.updateDisplay(printer, stringData);
 StarXpand.openDrawer(printer);

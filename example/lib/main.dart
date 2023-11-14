@@ -139,6 +139,15 @@ class _MyAppState extends State<MyApp> {
     StarXpand.updateDisplay(printer, displayDoc);
   }
 
+  void _getStatus(StarXpandPrinter printer) async {
+    try {
+      var status = await StarXpand.getStatus(printer);
+      print("Got status ${status.toString()}");
+    } catch (e) {
+      print(e.toString());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -147,7 +156,8 @@ class _MyAppState extends State<MyApp> {
           title: const Text('StarXpand SDK - Example app'),
         ),
         body: Column(children: [
-          TextButton(child: Text('Search for devices'), onPressed: () => _find()),
+          TextButton(
+              child: Text('Search for devices'), onPressed: () => _find()),
           if (printers != null)
             for (var p in printers!)
               ListTile(
@@ -157,11 +167,20 @@ class _MyAppState extends State<MyApp> {
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      OutlinedButton(onPressed: () => _print(p), child: Text("Print")),
+                      OutlinedButton(
+                          onPressed: () => _print(p), child: Text("Print")),
                       Container(width: 4),
-                      OutlinedButton(onPressed: () => _openDrawer(p), child: Text("Open drawer")),
+                      OutlinedButton(
+                          onPressed: () => _openDrawer(p),
+                          child: Text("Open drawer")),
                       Container(width: 4),
-                      OutlinedButton(onPressed: () => _updateDisplayText(p), child: Text("Update display")),
+                      OutlinedButton(
+                          onPressed: () => _updateDisplayText(p),
+                          child: Text("Update display")),
+                      Container(width: 4),
+                      OutlinedButton(
+                          onPressed: () => _getStatus(p),
+                          child: Text("Get Status")),
                     ],
                   ))
         ]),

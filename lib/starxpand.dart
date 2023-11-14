@@ -1,19 +1,19 @@
 import 'dart:async';
 
-import 'package:starxpand/models/starxpand_document_display.dart';
-import 'package:uuid/uuid.dart';
-
 import 'package:flutter/services.dart';
 import 'package:starxpand/models/starxpand_callbacks.dart';
 import 'package:starxpand/models/starxpand_document.dart';
-import 'package:starxpand/models/starxpand_printer.dart';
+import 'package:starxpand/models/starxpand_document_display.dart';
 import 'package:starxpand/models/starxpand_document_drawer.dart';
+import 'package:starxpand/models/starxpand_printer.dart';
+import 'package:starxpand/models/starxpand_status.dart';
+import 'package:uuid/uuid.dart';
 
 export 'package:starxpand/models/starxpand_callbacks.dart';
-export 'package:starxpand/models/starxpand_printer.dart';
 export 'package:starxpand/models/starxpand_document.dart';
-export 'package:starxpand/models/starxpand_document_print.dart';
 export 'package:starxpand/models/starxpand_document_drawer.dart';
+export 'package:starxpand/models/starxpand_document_print.dart';
+export 'package:starxpand/models/starxpand_printer.dart';
 
 class StarXpand {
   static final MethodChannel _channel = const MethodChannel('starxpand')
@@ -92,6 +92,12 @@ class StarXpand {
   static Future<bool> updateDisplay(
           StarXpandPrinter printer, StarXpandDocumentDisplay display) =>
       printDocument(printer, StarXpandDocument()..addDisplay(display));
+
+  static Future<StarXpandStatus> getStatus(StarXpandPrinter printer) async {
+    var result = Map<String, dynamic>.from(
+        await _channel.invokeMethod('getStatus', {"printer": printer.toMap()}));
+    return StarXpandStatus.fromMap(result.cast<String, dynamic>());
+  }
 
   static Future<String> startInputListener(StarXpandPrinter printer,
       StarXpandCallback<StarXpandInputPayload> callback) async {

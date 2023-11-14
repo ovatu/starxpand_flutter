@@ -81,12 +81,63 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     Log.d(tag, "onMethodCall: ${call.method} - ${call.arguments}")
 
     when (call.method) {
+      "getStatus" -> getStatus(call.arguments as Map<*, *>, result)
       "findPrinters" -> findPrinters(call.arguments as Map<*, *>, result)
       "printDocument" -> printDocument(call.arguments as Map<*, *>, result)
       "updateDisplay" -> printDocument(call.arguments as Map<*, *>, result)
       "startInputListener" -> startInputListener(call.arguments as Map<*, *>, result)
       "stopInputListener" -> stopInputListener(call.arguments as Map<*, *>, result)
       else -> result.notImplemented()
+    }
+  }
+
+  private fun getStatus(@NonNull args: Map<*, *>, result: Result) {
+    val printer = getPrinter(args["printer"] as Map<*, *>)
+
+    val job = SupervisorJob()
+    val scope = CoroutineScope(Dispatchers.Default + job)
+    scope.launch {
+      if (openPrinter(printer)) {
+        try {
+          Log.d("status", "GetPrinterStatus $printer")
+
+          val status = printer.getStatusAsync().await();
+          result.success(
+            mutableMapOf(
+              "hasError" to status.hasError,
+              "coverOpen" to status.coverOpen,
+              "drawerOpenCloseSignal" to status.drawerOpenCloseSignal,
+              "paperEmpty" to status.paperEmpty,
+              "paperNearEmpty" to status.paperNearEmpty,
+              "reserved" to status.reserved,
+              "detail" to mutableMapOf(
+                "cleaningNotification" to status.detail.cleaningNotification,
+                "cutterError" to status.detail.cutterError,
+                "detectedPaperWidth" to status.detail.detectedPaperWidth,
+                "drawer1OpenCloseSignal" to status.detail.drawer1OpenCloseSignal,
+                "drawer1OpenedMethod" to status.detail.drawer1OpenedMethod?.value(),
+                "drawer2OpenCloseSignal" to status.detail.drawer2OpenCloseSignal,
+                "drawer2OpenedMethod" to status.detail.drawer2OpenedMethod?.value(),
+                "drawerOpenError" to status.detail.drawerOpenError,
+                "externalDevice1Connected" to status.detail.externalDevice1Connected,
+                "externalDevice2Connected" to status.detail.externalDevice2Connected,
+                "paperJamError" to status.detail.paperJamError,
+                "paperPresent" to status.detail.paperPresent,
+                "paperSeparatorError" to status.detail.paperSeparatorError,
+                "partsReplacementNotification" to status.detail.partsReplacementNotification,
+                "printUnitOpen" to status.detail.printUnitOpen,
+                "rollPositionError" to status.detail.rollPositionError,
+              ),
+            )
+          )
+        } catch (e: java.lang.Exception) {
+          Log.d("status", "GetStatusError $e")
+          Log.d("status", e.localizedMessage)
+          result.error("error", e.localizedMessage, e)
+        } finally {
+          closePrinter(printer)
+        }
+      }
     }
   }
 
@@ -644,6 +695,13 @@ fun InterfaceType.value() : String {
     InterfaceType.Bluetooth -> "bluetooth"
     InterfaceType.Usb -> "usb"
     else -> "unknown"
+  }
+}
+
+fun DrawerOpenedMethod.value() : String {
+  return when (this) {
+    DrawerOpenedMethod.ByHand -> "byHand"
+    DrawerOpenedMethod.ByCommand -> "byCommand"
   }
 }
 
