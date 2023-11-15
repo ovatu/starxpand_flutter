@@ -576,6 +576,25 @@ class StarxpandPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           val text = action["text"] as String
           printerBuilder.actionPrintText(text)
         }
+        "printRuledLine" -> {
+          val ruleLineWidth = action["width"] as Double
+          val parameters = RuledLineParameter(ruleLineWidth)
+
+          if (action["thickness"] != null) {
+            parameters.setThickness(action["thickness"] as Double)
+          }
+
+          if (action["lineStyle"] != null) {
+            val lineStyle = when (action["lineStyle"] as String) {
+              "double" -> LineStyle.Double
+              else -> LineStyle.Single
+            }
+
+            parameters.setLineStyle(lineStyle)
+          }
+
+          printerBuilder.actionPrintRuledLine(parameters)
+        }
         "printLogo" -> {
           val keyCode = action["keyCode"] as String
           printerBuilder.actionPrintLogo(LogoParameter(keyCode))
