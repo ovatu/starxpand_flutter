@@ -210,6 +210,10 @@ class StarXpandDocumentPrint extends StarXpandDocumentContent {
     _actions.add({'action': 'printImage', 'image': image, 'width': width});
   }
 
+  List<Map> getActions() {
+    return _actions;
+  }
+
   @override
   Map getData() {
     return {"actions": _actions};
