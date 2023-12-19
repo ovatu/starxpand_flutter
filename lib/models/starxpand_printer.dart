@@ -48,6 +48,7 @@ enum StarXpandPrinterModel {
   final List<StarXpandPrinterPaper> paper;
 
   const StarXpandPrinterModel(this.label, this.paper);
+
   static StarXpandPrinterModel fromName(String name) =>
       StarXpandPrinterModel.values.where((e) => e.name == name).first;
 }
@@ -57,24 +58,27 @@ class StarXpandPrinter {
   StarXpandPrinter.fromMap(Map<String, dynamic> response)
       : model = StarXpandPrinterModel.fromName(response['model']),
         identifier = response['identifier'],
+        ipAddress = response['ipAddress'],
         interface = StarXpandInterface.fromName(response['interface']);
 
   // Name of the called method
   StarXpandPrinterModel model;
   String identifier;
+  String? ipAddress;
   StarXpandInterface interface;
 
   /// Render a string repesentation of the response
   @override
   String toString() {
-    return 'model: $model, identifier: $identifier, interface: $interface';
+    return 'model: $model, identifier: $identifier, ipAddress: $ipAddress, interface: $interface';
   }
 
   Map<String, dynamic> toMap() {
     return {
       'model': model.name,
       'identifier': identifier,
-      'interface': interface.name
+      'interface': interface.name,
+      'ipAddress': ipAddress,
     };
   }
 }
