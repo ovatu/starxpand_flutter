@@ -84,9 +84,8 @@ class StarXpand {
       printer, StarXpandDocument()..addDrawer(StarXpandDocumentDrawer()));
 
   static Future<bool> openPrinterConnection(StarXpandPrinter printer) async {
-    return await _channel.invokeMethod('openConnection', {
-      {"printer": printer.toMap()}
-    });
+    return await _channel
+        .invokeMethod('openConnection', {"printer": printer.toMap()});
   }
 
   static Future<bool> closePrinterConnection(StarXpandPrinter printer) async {
