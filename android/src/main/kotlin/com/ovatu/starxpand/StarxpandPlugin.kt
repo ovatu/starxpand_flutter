@@ -294,7 +294,6 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                             callbackGuid, "printerFound", mutableMapOf(
                                 "model" to printer.information?.model?.value(),
                                 "identifier" to printer.connectionSettings.identifier,
-//              "ipAddress" to printer.information
                                 "interface" to printer.connectionSettings.interfaceType.value()
                             )
                         )

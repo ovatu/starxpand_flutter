@@ -58,19 +58,17 @@ class StarXpandPrinter {
   StarXpandPrinter.fromMap(Map<String, dynamic> response)
       : model = StarXpandPrinterModel.fromName(response['model']),
         identifier = response['identifier'],
-        ipAddress = response['ipAddress'],
         interface = StarXpandInterface.fromName(response['interface']);
 
   // Name of the called method
   StarXpandPrinterModel model;
   String identifier;
-  String? ipAddress;
   StarXpandInterface interface;
 
   /// Render a string repesentation of the response
   @override
   String toString() {
-    return 'model: $model, identifier: $identifier, ipAddress: $ipAddress, interface: $interface';
+    return 'model: $model, identifier: $identifier, interface: $interface';
   }
 
   Map<String, dynamic> toMap() {
@@ -78,7 +76,6 @@ class StarXpandPrinter {
       'model': model.name,
       'identifier': identifier,
       'interface': interface.name,
-      'ipAddress': ipAddress,
     };
   }
 }
