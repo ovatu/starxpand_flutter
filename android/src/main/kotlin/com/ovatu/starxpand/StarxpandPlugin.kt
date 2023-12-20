@@ -39,8 +39,6 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     private lateinit var channel: MethodChannel
     private lateinit var activity: Activity
 
-    private var connectedPrinter: StarPrinter? = null
-
     private var _manager: StarDeviceDiscoveryManager? = null
     private var _printers: MutableMap<String, StarPrinter> = mutableMapOf()
     private var _permissionCallback: ((requestCode: Int, permissions: Array<String>, grantResults: IntArray) -> Unit)? =
@@ -94,6 +92,7 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         Log.d(tag, "onMethodCall: ${call.method} - ${call.arguments}")
 
         when (call.method) {
+            "monitor" -> monitor(call.arguments as Map<*, *>, result)
             "openConnection" -> openPrinterConnection(call.arguments as Map<*, *>, result)
             "closeConnection" -> closePrinterConnection(call.arguments as Map<*, *>, result)
             "getStatus" -> getStatus(call.arguments as Map<*, *>, result)
@@ -106,19 +105,74 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         }
     }
 
+    private fun monitor(@NonNull args: Map<*, *>, result: Result) {
+        val job = SupervisorJob()
+        val scope = CoroutineScope(Dispatchers.Default + job)
+        val printer = getPrinter(args["printer"] as Map<*, *>)
+
+        scope.launch {
+            // Callback for printer state changed.
+            printer.printerDelegate = object : PrinterDelegate() {
+                override fun onReady() {
+                    super.onReady()
+                    Log.d("Monitor", "Printer: Ready")
+                }
+
+                override fun onCommunicationError(e: StarIO10Exception) {
+                    super.onCommunicationError(e)
+                    Log.d("OnCommunicationError", "Printer: Communication issue...")
+                }
+                // ...
+                // Please refer to document for other callback.
+            }
+
+            printer.drawerDelegate = object : DrawerDelegate() {
+                override fun onOpenCloseSignalSwitched(openCloseSignal: Boolean) {
+                    super.onOpenCloseSignalSwitched(openCloseSignal)
+                    Log.d("Monitor", "Drawer: Open Close Signal Switched: ${openCloseSignal}")
+                }
+
+                // ...
+                // Please refer to document for other callback.
+            }
+
+            printer.inputDeviceDelegate = object : InputDeviceDelegate() {
+                override fun onDataReceived(data: List<Byte>) {
+                    super.onDataReceived(data)
+                    Log.d("Monitor", "Input Device: DataReceived ${data}")
+                }
+
+                // ...
+                // Please refer to document for other callback.
+            }
+
+            printer.displayDelegate = object : DisplayDelegate() {
+                override fun onConnected() {
+                    super.onConnected()
+                    Log.d("Monitor", "Display: Connected")
+                }
+
+                // ...
+                // Please refer to document for other callback.
+            }
+
+            try {
+                // Connect to the printer.
+                printer.openAsync().await()
+            } catch (e: Exception) {
+                // Exception.
+                Log.d("Monitor", "${e.message}")
+            }
+        }
+    }
+
     private fun openPrinterConnection(@NonNull args: Map<*, *>, result: Result) {
         val printer = getPrinter(args["printer"] as Map<*, *>)
 
         val job = SupervisorJob()
         val scope = CoroutineScope(Dispatchers.Default + job)
         scope.launch {
-            if (openPrinter(printer)) {
-                connectedPrinter = printer
-                result.success(true)
-            } else {
-                connectedPrinter = null
-                result.success(false)
-            }
+            result.success(openPrinter(printer));
         }
     }
 
@@ -128,12 +182,7 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         val job = SupervisorJob()
         val scope = CoroutineScope(Dispatchers.Default + job)
         scope.launch {
-            if (connectedPrinter != null) {
-                result.success(closePrinter(printer));
-            } else {
-                connectedPrinter = null
-                result.success(true)
-            }
+            result.success(closePrinter(printer));
         }
     }
 
@@ -392,23 +441,18 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     private fun printDocument(@NonNull args: Map<*, *>, result: Result) {
         Log.d("print", "print. ${args["printer"]}")
 
-//        val printer = getPrinter(args["printer"] as Map<*, *>)
+        val printer = getPrinter(args["printer"] as Map<*, *>)
         val document = args["document"] as Map<*, *>
         val contents = document["contents"] as Collection<*>
-
-        Log.d("print", "document: $document")
 
         val job = SupervisorJob()
         val scope = CoroutineScope(Dispatchers.Default + job)
 
-        if (connectedPrinter == null) {
-            Log.d("print", "Error printing: No connection available")
-            result.error("error", "No active printer connection", null)
-            return
-        }
+        Log.d("Printer OpenTimeout Int", printer.openTimeout.toString())
+        Log.d("Printer StatusTimeout", printer.getStatusTimeout.toString())
 
         scope.launch {
-//      if (openPrinter(printer)) {
+
             try {
                 val builder = StarXpandCommandBuilder()
                 val docBuilder = DocumentBuilder()
@@ -442,15 +486,12 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 Log.d("print", "commands $commands")
 
                 // Print.
-                connectedPrinter?.printAsync(commands)?.await()
+                printer.printAsync(commands).await()
                 result.success(true)
             } catch (e: java.lang.Exception) {
                 Log.d("print", "commands $e")
                 result.error("error", e.localizedMessage, e)
-            } finally {
-//                closePrinter(printer)
             }
-//      }
         }
     }
 
