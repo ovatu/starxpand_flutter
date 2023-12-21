@@ -180,6 +180,9 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             }
 
             try {
+
+                Log.d("Monitor", "Printer: $printer")
+
                 // Close if the printer was connected already.
                 printer.closeAsync().await()
 
