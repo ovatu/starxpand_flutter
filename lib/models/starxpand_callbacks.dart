@@ -52,6 +52,35 @@ class StarXpandPrinterPayload extends StarXpandCallbackPayload {
   }
 }
 
+enum StarXpandPrinterStatusUpdateType {
+  connected,
+  disconnected,
+  error;
+
+  static StarXpandPrinterStatusUpdateType fromName(String name) =>
+    StarXpandPrinterStatusUpdateType.values.where((e) => e.name == name).first;
+}
+
+class StarXpandPrinterStatusPayload extends StarXpandCallbackPayload {
+  late final StarXpandPrinterStatusUpdateType updateType;
+  late final String message;
+
+  StarXpandPrinterStatusPayload(String type, Map<String, dynamic> payload)
+    : super(type, payload);
+
+  @override
+  fromMap(Map<String, dynamic> data) {
+    updateType = StarXpandPrinterStatusUpdateType.fromName(data['updateType']);
+    message = data['message'];
+  }
+
+
+  @override
+  String toString() {
+    return "StarXpandStatusPayload: type($updateType) message($message)";
+  }
+}
+
 class StarXpandInputPayload extends StarXpandCallbackPayload {
   late final String inputString;
   late final Uint8List inputData;

@@ -109,6 +109,7 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         val job = SupervisorJob()
         val scope = CoroutineScope(Dispatchers.Default + job)
         val printer = getPrinter(args["printer"] as Map<*, *>)
+        val callbackGuid = args["callback"] as String
 
         scope.launch {
             // Callback for printer state changed.
@@ -116,14 +117,36 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 override fun onReady() {
                     super.onReady()
                     Log.d("Monitor", "Printer: Ready")
+                    sendCallback(
+                        callbackGuid, "onReady", mutableMapOf(
+                            "updateType" to "connected",
+                            "message" to "Ready for printing"
+                        )
+                    )
+                }
+
+                override fun onError() {
+                    super.onError()
+                    Log.d("Monitor", "Printer: Error")
+                    sendCallback(
+                        callbackGuid, "onError", mutableMapOf(
+                            "updateType" to "error",
+                            "message" to "Printer error, please check the printer."
+                        )
+                    )
                 }
 
                 override fun onCommunicationError(e: StarIO10Exception) {
                     super.onCommunicationError(e)
-                    Log.d("OnCommunicationError", "Printer: Communication issue...")
+                    e.localizedMessage?.let { Log.d("OnCommunicationError", it) }
+
+                    sendCallback(
+                        callbackGuid, "onCommunicationError", mutableMapOf(
+                            "updateType" to "disconnected",
+                            "message" to e.localizedMessage
+                        )
+                    )
                 }
-                // ...
-                // Please refer to document for other callback.
             }
 
             printer.drawerDelegate = object : DrawerDelegate() {
@@ -157,11 +180,20 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             }
 
             try {
-                // Connect to the printer.
+                // Close if the printer was connected already.
+                printer.closeAsync().await()
+
+                // Open the printer connection
                 printer.openAsync().await()
             } catch (e: Exception) {
                 // Exception.
-                Log.d("Monitor", "${e.message}")
+                e.localizedMessage?.let { Log.d("Monitor", it) }
+                sendCallback(
+                    callbackGuid, "monitor", mutableMapOf(
+                        "updateType" to "disconnected",
+                        "message" to "Could not connect"
+                    )
+                )
             }
         }
     }
