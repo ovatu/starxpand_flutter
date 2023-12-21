@@ -49,8 +49,15 @@ enum StarXpandPrinterModel {
 
   const StarXpandPrinterModel(this.label, this.paper);
 
-  static StarXpandPrinterModel fromName(String name) =>
-      StarXpandPrinterModel.values.where((e) => e.name == name).first;
+  static StarXpandPrinterModel fromName(String name) {
+    try {
+      return StarXpandPrinterModel.values
+          .where((e) => e.name.toLowerCase() == name.toLowerCase())
+          .first;
+    } catch (e) {
+      return StarXpandPrinterModel.unknown;
+    }
+  }
 }
 
 class StarXpandPrinter {
