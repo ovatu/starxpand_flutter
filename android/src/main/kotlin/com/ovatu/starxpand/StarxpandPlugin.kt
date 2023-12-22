@@ -98,6 +98,7 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             "getStatus" -> getStatus(call.arguments as Map<*, *>, result)
             "findPrinters" -> findPrinters(call.arguments as Map<*, *>, result)
             "printDocument" -> printDocument(call.arguments as Map<*, *>, result)
+            "printRawBytes" -> printRawBytes(call.arguments as Map<*, *>, result)
             "updateDisplay" -> printDocument(call.arguments as Map<*, *>, result)
             "startInputListener" -> startInputListener(call.arguments as Map<*, *>, result)
             "stopInputListener" -> stopInputListener(call.arguments as Map<*, *>, result)
@@ -478,6 +479,30 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             true
         } catch (e: Exception) {
             false
+        }
+    }
+
+    private fun printRawBytes(@NonNull args: Map<*, *>, result: Result) {
+        val printer = getPrinter(args["printer"] as Map<*, *>)
+        val bytes = args["bytes"] as? ByteArray
+
+        val job = SupervisorJob()
+        val scope = CoroutineScope(Dispatchers.Default + job)
+
+        scope.launch {
+            try {
+                printer.openAsync().await()
+                if (bytes != null) {
+                    printer.printRawDataAsync(bytes.toList()).await()
+                }
+            } catch (e: java.lang.Exception) {
+                Log.d("print", "commands $e")
+                result.error("error", e.localizedMessage, e)
+            } finally {
+                if (printer.connectionSettings.interfaceType != InterfaceType.Bluetooth) {
+                    printer.closeAsync().await()
+                }
+            }
         }
     }
 
