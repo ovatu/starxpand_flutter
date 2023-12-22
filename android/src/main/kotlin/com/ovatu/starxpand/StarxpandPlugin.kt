@@ -111,6 +111,16 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         val printer = getPrinter(args["printer"] as Map<*, *>)
         val callbackGuid = args["callback"] as String
 
+        if (printer.connectionSettings.interfaceType != InterfaceType.Bluetooth) {
+            sendCallback(
+                callbackGuid, "monitor", mutableMapOf(
+                    "updateType" to "connected",
+                    "message" to "Not a bluetooth device, no need to continue."
+                )
+            )
+            return result.success(true)
+        }
+
         scope.launch {
             // Callback for printer state changed.
             printer.printerDelegate = object : PrinterDelegate() {
@@ -180,7 +190,6 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             }
 
             try {
-
                 Log.d("Monitor", "Printer: $printer")
 
                 // Close if the printer was connected already.
@@ -223,13 +232,13 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     private fun getStatus(@NonNull args: Map<*, *>, result: Result) {
         val printer = getPrinter(args["printer"] as Map<*, *>)
+        Log.d("status", "GetPrinterStatus $printer")
 
         val job = SupervisorJob()
         val scope = CoroutineScope(Dispatchers.Default + job)
         scope.launch {
             if (openPrinter(printer)) {
                 try {
-                    Log.d("status", "GetPrinterStatus $printer")
 
                     val status = printer.getStatusAsync().await();
                     result.success(
@@ -262,7 +271,6 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     )
                 } catch (e: java.lang.Exception) {
                     Log.d("status", "GetStatusError $e")
-                    Log.d("status", e.localizedMessage)
                     result.error("error", e.localizedMessage, e)
                 } finally {
                     closePrinter(printer)
@@ -483,11 +491,7 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         val job = SupervisorJob()
         val scope = CoroutineScope(Dispatchers.Default + job)
 
-        Log.d("Printer OpenTimeout Int", printer.openTimeout.toString())
-        Log.d("Printer StatusTimeout", printer.getStatusTimeout.toString())
-
         scope.launch {
-
             try {
                 val builder = StarXpandCommandBuilder()
                 val docBuilder = DocumentBuilder()
@@ -526,6 +530,10 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             } catch (e: java.lang.Exception) {
                 Log.d("print", "commands $e")
                 result.error("error", e.localizedMessage, e)
+            } finally {
+                if (printer.connectionSettings.interfaceType != InterfaceType.Bluetooth) {
+                    printer.closeAsync().await()
+                }
             }
         }
     }
