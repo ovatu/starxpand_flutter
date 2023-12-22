@@ -112,6 +112,13 @@ class StarXpand {
     return await _channel.invokeMethod('closeConnection', {});
   }
 
+  static Future<bool> printRawBytes(StarXpandPrinter printer, Uint8List bytes) async {
+    return await _channel.invokeMethod('printRawBytes', {
+      'printer': printer.toMap(),
+      'bytes': bytes
+    });
+  }
+  
   static Future<bool> printDocument(StarXpandPrinter printer,
       StarXpandDocument document) async {
     return await _channel.invokeMethod('printDocument',
