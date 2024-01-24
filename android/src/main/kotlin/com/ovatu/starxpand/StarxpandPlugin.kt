@@ -551,9 +551,9 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
                 // UNCOMMENT TO TEST Retry logic
                 // If (i == 1) throw not opened to test the retry function
-                if (attempt == 1 && printer.connectionSettings.interfaceType == InterfaceType.Bluetooth) {
-                    closePrinter(printer)
-                }
+//                if (attempt == 1 && printer.connectionSettings.interfaceType == InterfaceType.Bluetooth) {
+//                    closePrinter(printer)
+//                }
 
                 // Print.
                 if (printer.connectionSettings.interfaceType != InterfaceType.Bluetooth) {
