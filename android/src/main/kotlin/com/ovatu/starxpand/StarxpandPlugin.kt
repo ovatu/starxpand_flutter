@@ -97,9 +97,9 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             "closeConnection" -> closePrinterConnection(call.arguments as Map<*, *>, result)
             "getStatus" -> getStatus(call.arguments as Map<*, *>, result)
             "findPrinters" -> findPrinters(call.arguments as Map<*, *>, result)
-            "printDocument" -> printDocument(call.arguments as Map<*, *>, result)
             "printRawBytes" -> printRawBytes(call.arguments as Map<*, *>, result)
-            "updateDisplay" -> printDocument(call.arguments as Map<*, *>, result)
+            "printDocument" -> printDocument(call.arguments as Map<*, *>, result, 1)
+            "updateDisplay" -> printDocument(call.arguments as Map<*, *>, result, 1)
             "startInputListener" -> startInputListener(call.arguments as Map<*, *>, result)
             "stopInputListener" -> stopInputListener(call.arguments as Map<*, *>, result)
             else -> result.notImplemented()
@@ -506,8 +506,8 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         }
     }
 
-    private fun printDocument(@NonNull args: Map<*, *>, result: Result) {
-        Log.d("print", "print. ${args["printer"]}")
+    private fun printDocument(@NonNull args: Map<*, *>, result: Result, attempt: Int) {
+        Log.d("print", "${args["printer"]}")
 
         val printer = getPrinter(args["printer"] as Map<*, *>)
         val document = args["document"] as Map<*, *>
@@ -549,15 +549,36 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
                 Log.d("print", "commands $commands")
 
+                // UNCOMMENT TO TEST Retry logic
+                // If (i == 1) throw not opened to test the retry function
+                if (attempt == 1 && printer.connectionSettings.interfaceType == InterfaceType.Bluetooth) {
+                    closePrinter(printer)
+                }
+
                 // Print.
+                if (printer.connectionSettings.interfaceType != InterfaceType.Bluetooth) {
+                    openPrinter(printer)
+                }
+
                 printer.printAsync(commands).await()
+
                 result.success(true)
             } catch (e: java.lang.Exception) {
-                Log.d("print", "commands $e")
-                result.error("error", e.localizedMessage, e)
+                // Retry once if any exception occurs and the interface is Bluetooth.
+                if (printer.connectionSettings.interfaceType == InterfaceType.Bluetooth && attempt < 2) {
+                    Log.d("print", "Retrying because of a Bluetooth device exception.", e)
+                    // Close & Open
+                    closePrinter(printer)
+                    openPrinter(printer)
+                    // Retry one more time (Add +1 to the attempt count)
+                    return@launch printDocument(args, result, attempt + 1)
+                } else {
+                    Log.d("print", "commands $e")
+                    result.error("error", e.localizedMessage, e)
+                }
             } finally {
                 if (printer.connectionSettings.interfaceType != InterfaceType.Bluetooth) {
-                    printer.closeAsync().await()
+                    closePrinter(printer)
                 }
             }
         }
