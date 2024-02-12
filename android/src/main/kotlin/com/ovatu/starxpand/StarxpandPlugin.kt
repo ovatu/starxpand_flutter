@@ -217,16 +217,12 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         val job = SupervisorJob()
         val scope = CoroutineScope(Dispatchers.Default + job)
         scope.launch {
-
-            printer.openTimeout = 3000
             val res = openPrinter(printer)
-
 
             Log.d(
                 "OpenPrinterConnection",
                 "Opening printer connection to ${printer.connectionSettings.identifier}"
             )
-
             result.success(res);
         }
     }
@@ -556,40 +552,16 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
                 // Get printing data from StarXpandCommandBuilder object.
                 val commands = builder.getCommands()
-
                 Log.d("print", "commands $commands")
 
-                // UNCOMMENT TO TEST Retry logic
-                // If (i == 1) throw not opened to test the retry function
-//                if (attempt == 1 && printer.connectionSettings.interfaceType == InterfaceType.Bluetooth) {
-//                    closePrinter(printer)
-//                }
-
-                // Print.
-//                if (printer.connectionSettings.interfaceType != InterfaceType.Bluetooth) {
                 openPrinter(printer)
-//                }
-
                 printer.printAsync(commands).await()
-
                 result.success(true)
             } catch (e: java.lang.Exception) {
-                // Retry once if any exception occurs and the interface is Bluetooth.
-//                if (printer.connectionSettings.interfaceType == InterfaceType.Bluetooth && attempt < 2) {
-//                    Log.d("print", "Retrying because of a Bluetooth device exception.", e)
-//                    // Close & Open
-//                    closePrinter(printer)
-//                    openPrinter(printer)
-//                    // Retry one more time (Add +1 to the attempt count)
-//                    return@launch printDocument(args, result, attempt + 1)
-//                } else {
                 Log.d("print", "commands $e")
                 result.error("error", e.localizedMessage, e)
-//                }
             } finally {
-//                if (printer.connectionSettings.interfaceType != InterfaceType.Bluetooth) {
                 closePrinter(printer)
-//                }
             }
         }
     }
@@ -600,7 +572,7 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             "no2" -> Channel.No2
             else -> Channel.No1
         }
-        return DrawerBuilder().actionOpen(OpenParameter().setOnTime(0).setChannel(channel))
+        return DrawerBuilder().actionOpen(OpenParameter().setChannel(channel))
     }
 
     private fun getDisplayBuilder(data: Map<*, *>): DisplayBuilder {
