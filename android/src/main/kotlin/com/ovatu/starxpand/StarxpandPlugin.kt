@@ -217,7 +217,17 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         val job = SupervisorJob()
         val scope = CoroutineScope(Dispatchers.Default + job)
         scope.launch {
-            result.success(openPrinter(printer));
+
+            printer.openTimeout = 3000
+            val res = openPrinter(printer)
+
+
+            Log.d(
+                "OpenPrinterConnection",
+                "Opening printer connection to ${printer.connectionSettings.identifier}"
+            )
+
+            result.success(res);
         }
     }
 
@@ -556,30 +566,30 @@ class StarxpandPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 //                }
 
                 // Print.
-                if (printer.connectionSettings.interfaceType != InterfaceType.Bluetooth) {
-                    openPrinter(printer)
-                }
+//                if (printer.connectionSettings.interfaceType != InterfaceType.Bluetooth) {
+                openPrinter(printer)
+//                }
 
                 printer.printAsync(commands).await()
 
                 result.success(true)
             } catch (e: java.lang.Exception) {
                 // Retry once if any exception occurs and the interface is Bluetooth.
-                if (printer.connectionSettings.interfaceType == InterfaceType.Bluetooth && attempt < 2) {
-                    Log.d("print", "Retrying because of a Bluetooth device exception.", e)
-                    // Close & Open
-                    closePrinter(printer)
-                    openPrinter(printer)
-                    // Retry one more time (Add +1 to the attempt count)
-                    return@launch printDocument(args, result, attempt + 1)
-                } else {
-                    Log.d("print", "commands $e")
-                    result.error("error", e.localizedMessage, e)
-                }
+//                if (printer.connectionSettings.interfaceType == InterfaceType.Bluetooth && attempt < 2) {
+//                    Log.d("print", "Retrying because of a Bluetooth device exception.", e)
+//                    // Close & Open
+//                    closePrinter(printer)
+//                    openPrinter(printer)
+//                    // Retry one more time (Add +1 to the attempt count)
+//                    return@launch printDocument(args, result, attempt + 1)
+//                } else {
+                Log.d("print", "commands $e")
+                result.error("error", e.localizedMessage, e)
+//                }
             } finally {
-                if (printer.connectionSettings.interfaceType != InterfaceType.Bluetooth) {
-                    closePrinter(printer)
-                }
+//                if (printer.connectionSettings.interfaceType != InterfaceType.Bluetooth) {
+                closePrinter(printer)
+//                }
             }
         }
     }
