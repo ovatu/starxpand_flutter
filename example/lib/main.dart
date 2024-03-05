@@ -1,9 +1,8 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-
-import 'package:flutter/services.dart';
+import 'package:starxpand/models/starxpand_document_display.dart';
 import 'package:starxpand/starxpand.dart';
 
 void main() {
@@ -120,9 +119,33 @@ class _MyAppState extends State<MyApp> {
     printDoc.actionCut(StarXpandCutType.partial);
 
     doc.addPrint(printDoc);
-    doc.addDrawer(StarXpandDocumentDrawer());
-
     StarXpand.printDocument(printer, doc);
+  }
+
+  int displayCounterText = 0;
+
+  /**
+   * Can also be added to a normal printDocument via
+   * doc.addDisplay(StarXpandDocumentDisplay display)
+   */
+  void _updateDisplayText(StarXpandPrinter printer) {
+    var displayDoc = StarXpandDocumentDisplay()
+      ..actionClearAll()
+      ..actionClearLine()
+      ..actionShowText("StarXpand\n")
+      ..actionClearLine()
+      ..actionShowText("Updated ${++displayCounterText} times");
+
+    StarXpand.updateDisplay(printer, displayDoc);
+  }
+
+  void _getStatus(StarXpandPrinter printer) async {
+    try {
+      var status = await StarXpand.getStatus(printer);
+      print("Got status ${status.toString()}");
+    } catch (e) {
+      print(e.toString());
+    }
   }
 
   @override
@@ -130,17 +153,36 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Plugin example app'),
+          title: const Text('StarXpand SDK - Example app'),
         ),
         body: Column(children: [
-          TextButton(child: Text('FInd'), onPressed: () => _find()),
+          TextButton(
+              child: Text('Search for devices'), onPressed: () => _find()),
           if (printers != null)
             for (var p in printers!)
               ListTile(
                   onTap: () => _print(p),
-                  title: Text(p.model.label),
+                  title: Text(p.model.label + "(${p.interface.name})"),
                   subtitle: Text(p.identifier),
-                  trailing: Text(p.interface.name))
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      OutlinedButton(
+                          onPressed: () => _print(p), child: Text("Print")),
+                      Container(width: 4),
+                      OutlinedButton(
+                          onPressed: () => _openDrawer(p),
+                          child: Text("Open drawer")),
+                      Container(width: 4),
+                      OutlinedButton(
+                          onPressed: () => _updateDisplayText(p),
+                          child: Text("Update display")),
+                      Container(width: 4),
+                      OutlinedButton(
+                          onPressed: () => _getStatus(p),
+                          child: Text("Get Status")),
+                    ],
+                  ))
         ]),
       ),
     );
