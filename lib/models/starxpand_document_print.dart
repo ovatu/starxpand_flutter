@@ -33,6 +33,8 @@ enum StarXpandPdf417Level {
 enum StarXpandQRCodeModel { model1, model2 }
 enum StarXpandQRCodeLevel { l, m, q, h }
 
+enum StarXpandLineStyle { double, single }
+
 enum StarXpandStyleAlignment { left, center, right }
 enum StarXpandStyleFontType { a, b }
 enum StarXpandStyleInternationalCharacter {
@@ -192,8 +194,24 @@ class StarXpandDocumentPrint extends StarXpandDocumentContent {
     }..trim());
   }
 
+  actionPrintRuledLine(double width, {
+    required double? thickness,
+    StarXpandLineStyle lineStyle = StarXpandLineStyle.single,
+  }) {
+    _actions.add({
+      'action': 'printRuledLine',
+      'width': width,
+      'thickness': thickness,
+      'lineStyle': lineStyle.name,
+    });
+  }
+
   actionPrintImage(Uint8List image, int width) {
     _actions.add({'action': 'printImage', 'image': image, 'width': width});
+  }
+
+  List<Map> getActions() {
+    return _actions;
   }
 
   @override
