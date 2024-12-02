@@ -33,7 +33,7 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
         DispatchQueue.main.async {
             // Call the desired channel message here.
 
-            channel.invokeMethod("callback", arguments:[
+            self.channel.invokeMethod("callback", arguments:[
                 "guid": guid,
                 "type": type,
                 "data": payload
