@@ -30,12 +30,15 @@ public class SwiftStarxpandPlugin: NSObject, FlutterPlugin {
     }
     
     func sendCallback(guid: String, type: String, payload: Dictionary<String, Any?>) {
-        channel.invokeMethod("callback", arguments:[
-            "guid": guid,
-            "type": type,
-            "data": payload
-          ]
-        )
+        DispatchQueue.main.async {
+            // Call the desired channel message here.
+
+            channel.invokeMethod("callback", arguments:[
+                "guid": guid,
+                "type": type,
+                "data": payload
+            ])
+        }
     }
 
     func _findPrinters(args: [String:Any?], result: @escaping FlutterResult) {
