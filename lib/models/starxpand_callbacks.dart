@@ -65,3 +65,29 @@ class StarXpandInputPayload extends StarXpandCallbackPayload {
     inputData = data["data"];
   }
 }
+
+class StarXpandInputErrorPayload extends StarXpandCallbackPayload {
+  late final String errorString;
+
+  StarXpandInputErrorPayload(String type, Map<String, dynamic> payload)
+      : super(type, payload);
+
+  @override
+  fromMap(Map<String, dynamic> data) {
+    errorString = data["error"];
+  }
+}
+
+class StarXpandInputConnected extends StarXpandCallbackPayload {
+  StarXpandInputConnected() : super("connected", {});
+
+  @override
+  fromMap(Map<String, dynamic> data) => null;
+}
+
+class StarXpandInputDisconnected extends StarXpandCallbackPayload {
+  StarXpandInputDisconnected() : super("disconnected", {});
+
+  @override
+  fromMap(Map<String, dynamic> data) => null;
+}
