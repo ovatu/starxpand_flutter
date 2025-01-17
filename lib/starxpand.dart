@@ -39,14 +39,23 @@ class StarXpand {
     }
   }
 
-  static String _addCallbackHandler(StarXpandCallbackHandler handler) {
-    var uuid = const Uuid().v4();
+  static String _addCallbackHandler(
+    StarXpandCallbackHandler handler, {
+    /// override guid
+    String? guid,
+  }) {
+    String uuid;
+    if (guid == null) {
+      uuid = const Uuid().v4();
+    } else {
+      uuid = guid;
+    }
     _callbackHandlers[uuid] = handler;
     return uuid;
   }
 
   static _removeCallbackHandler(String guid) {
-    _callbackHandlers.remove(guid);
+    _callbackHandlers.removeWhere((key, value) => key.startsWith(guid));
   }
 
   static Future<List<StarXpandPrinter>> findPrinters(
@@ -88,16 +97,63 @@ class StarXpand {
         {"printer": printer.toMap(), "document": document.toMap()});
   }
 
-  static Future<String> startInputListener(StarXpandPrinter printer,
-      StarXpandCallback<StarXpandInputPayload> callback) async {
+  static Future<String> startInputListener(
+    StarXpandPrinter printer,
+    StarXpandCallback<StarXpandInputPayload> scannerCallback, {
+    StarXpandCallback<StarXpandInputErrorPayload>? scannerErrorCallback,
+    StarXpandCallback<StarXpandInputConnected>? scannerConnectedCallback,
+    StarXpandCallback<StarXpandInputDisconnected>? scannerDisconnectedCallback,
+  }) async {
     var guid = _addCallbackHandler(
-        StarXpandCallbackHandler<StarXpandInputPayload>(
-            (payload) => callback.call(payload),
-            (type, data) =>
-                StarXpandInputPayload(type, Map<String, dynamic>.from(data))));
+      StarXpandCallbackHandler<StarXpandInputPayload>(
+        (payload) => scannerCallback.call(payload),
+        (type, data) => StarXpandInputPayload(
+          type,
+          Map<String, dynamic>.from(data),
+        ),
+      ),
+    );
+
+    if (scannerErrorCallback != null) {
+      var guidScannerError = _addCallbackHandler(
+        StarXpandCallbackHandler<StarXpandInputErrorPayload>(
+          (payload) => scannerErrorCallback.call(payload),
+          (type, data) => StarXpandInputErrorPayload(
+            type,
+            Map<String, dynamic>.from(data),
+          ),
+        ),
+        guid: guid + "_error",
+      );
+    }
+
+    if (scannerConnectedCallback != null) {
+      var guidConnected = _addCallbackHandler(
+        StarXpandCallbackHandler<StarXpandInputConnected>(
+          (payload) => null,
+          (type, data) => StarXpandInputConnected(),
+        ),
+        guid: guid + "_connected",
+      );
+    }
+
+    if (scannerDisconnectedCallback != null) {
+      var guidDisconnected = _addCallbackHandler(
+        StarXpandCallbackHandler<StarXpandInputDisconnected>(
+          (payload) => null,
+          (type, data) => StarXpandInputDisconnected(),
+        ),
+        guid: guid + "_disconnected",
+      );
+    }
 
     await _channel.invokeMethod(
-        'startInputListener', {"callback": guid, "printer": printer.toMap()});
+      'startInputListener',
+      {
+        "callback": guid,
+        "printer": printer.toMap(),
+      },
+    );
 
     return guid;
   }
